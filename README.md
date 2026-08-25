@@ -2,21 +2,28 @@
 
 <div align="center">
 
-![DUbot Banner](banner.png)
+<img src="banner.png" alt="DUbot Banner" width="650"/>
 
-[![NodeJS](https://img.shields.io/badge/Node.js-v18+-68a063?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
-[![Baileys](https://img.shields.io/badge/Baileys-@whiskeysockets-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://github.com/WhiskeySockets/Baileys)
-[![Gemini](https://img.shields.io/badge/Google_Gemini-IA_Core-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
-[![Version](https://img.shields.io/badge/Version-1.3.0-orange?style=for-the-badge)](https://github.com/)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Termux_|_Linux_|_Windows-blueviolet?style=for-the-badge)](https://github.com/)
+<br/>
+
+<a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-v18+-68a063?style=for-the-badge&logo=node.js&logoColor=white" alt="NodeJS"/></a>
+<a href="https://github.com/WhiskeySockets/Baileys"><img src="https://img.shields.io/badge/Baileys-@whiskeysockets-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Baileys"/></a>
+<a href="https://ai.google.dev/"><img src="https://img.shields.io/badge/Google_Gemini-IA_Core-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Gemini"/></a>
+<a href="https://github.com/"><img src="https://img.shields.io/badge/Version-1.3.0-orange?style=for-the-badge" alt="Version"/></a>
+<a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License"/></a>
+<a href="https://github.com/"><img src="https://img.shields.io/badge/Platform-Termux_|_Linux_|_Windows-blueviolet?style=for-the-badge" alt="Platform"/></a>
 
 <p align="center">
   <b>El bot para WhatsApp más completo, modular y optimizado en Node.js (Baileys ESM).<br>
   Equipado con Sub-Bots Jadibots ilimitados, IA Gemini, Duelos PvP, Gestión de Grupos, Notas de Voz TTS, Casino, Economía Bancaria, Gacha RPG Patapon, Clima Satelital y Salas de Inter-Chat Virtual.</b>
 </p>
 
-[⚡ Conseguir Bot por WhatsApp](https://wa.me/56985529966?text=Hola%20Chile%20Pesos%2C%20quiero%20conseguir%20el%20bot%20DUbot%20para%20mi%20WhatsApp) • [📋 Lista de Comandos](#-lista-completa-de-comandos) • [📱 Guía Termux](#-1-instalación-en-android-termux) • [🐧 Guía Linux / VPS](#-2-instalación-en-linux--vps-ubuntudebian)
+<p align="center">
+  <a href="https://wa.me/56985529966?text=Hola%20Chile%20Pesos%2C%20quiero%20conseguir%20el%20bot%20DUbot%20para%20mi%20WhatsApp">⚡ <b>Conseguir Bot por WhatsApp</b></a> •
+  <a href="#-lista-completa-de-comandos">📋 <b>Lista de Comandos</b></a> •
+  <a href="#-1-instalación-en-android-termux">📱 <b>Guía Termux</b></a> •
+  <a href="#-2-instalación-en-linux--vps-ubuntudebian">🐧 <b>Guía Linux / VPS</b></a>
+</p>
 
 </div>
 
@@ -425,15 +432,13 @@ No, Google AI Studio ofrece un nivel gratuito con miles de peticiones diarias, m
 
 ## 👑 Información del Creador
 
-<div align="center">
-
 | Creador | WhatsApp User | Plataforma | Lenguaje | Contacto Directo |
 | :--- | :--- | :--- | :--- | :--- |
 | **Chile Pesos** | **@doodle duo** | **PC / VPS / Termux** | **Node.js (Baileys ESM)** | [📲 +56 9 8552 9966](https://wa.me/56985529966) |
 
-[![Contactar por WhatsApp](https://img.shields.io/badge/Contactar_al_Creador-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://wa.me/56985529966?text=Hola%20Chile%20Pesos%2C%20quiero%20conseguir%20el%20bot%20DUbot%20para%20mi%20WhatsApp)
-
-</div>
+<p align="center">
+  <a href="https://wa.me/56985529966?text=Hola%20Chile%20Pesos%2C%20quiero%20conseguir%20el%20bot%20DUbot%20para%20mi%20WhatsApp"><img src="https://img.shields.io/badge/Contactar_al_Creador-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Contactar"/></a>
+</p>
 
 ---
 
@@ -444,7 +449,3 @@ Este proyecto está bajo la Licencia **MIT**. Eres libre de usar, modificar y di
 <div align="center">
   <sub>Desarrollado con ❤️ y dedicación por <b>Chile Pesos (@doodle duo)</b>.</sub>
 </div>
-
-#   d u B o T - W A - b o t  
- #   d u B o T - W A - b o t  
- 
