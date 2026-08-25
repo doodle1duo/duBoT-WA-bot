@@ -10,7 +10,7 @@
 <a href="https://github.com/WhiskeySockets/Baileys"><img src="https://img.shields.io/badge/Baileys-@whiskeysockets-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Baileys"/></a>
 <a href="https://ai.google.dev/"><img src="https://img.shields.io/badge/Google_Gemini-IA_Core-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Gemini"/></a>
 <a href="https://github.com/"><img src="https://img.shields.io/badge/Version-1.3.0-orange?style=for-the-badge" alt="Version"/></a>
-<a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License"/></a>
+
 <a href="https://github.com/"><img src="https://img.shields.io/badge/Platform-Termux_|_Linux_|_Windows-blueviolet?style=for-the-badge" alt="Platform"/></a>
 
 <p align="center">
@@ -42,7 +42,6 @@
 - [⚙️ Configuración y Administradores](#️-configuración-y-administradores)
 - [❓ Preguntas Frecuentes & Solución de Problemas](#-preguntas-frecuentes--faq)
 - [👑 Creador & Contacto](#-información-del-creador)
-- [📄 Licencia](#-licencia)
 
 ---
 
@@ -439,12 +438,6 @@ No, Google AI Studio ofrece un nivel gratuito con miles de peticiones diarias, m
 <p align="center">
   <a href="https://wa.me/56985529966?text=Hola%20Chile%20Pesos%2C%20quiero%20conseguir%20el%20bot%20DUbot%20para%20mi%20WhatsApp"><img src="https://img.shields.io/badge/Contactar_al_Creador-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Contactar"/></a>
 </p>
-
----
-
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia **MIT**. Eres libre de usar, modificar y distribuir este software conforme a los términos de la licencia. Consulta el archivo [LICENSE](LICENSE) para más detalles.
 
 <div align="center">
   <sub>Desarrollado con ❤️ y dedicación por <b>Chile Pesos (@doodle duo)</b>.</sub>
