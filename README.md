@@ -351,6 +351,7 @@ Al iniciar `node bot.js`, podrás elegir entre 2 métodos de conexión:
 | `.slots [monto/all]` | `.sl`, `.tragamonedas`| Tragamonedas clásico con premios multiplicadores |
 | `.roulette [rojo/negro] [monto]` | `.rl`, `.ruleta` | Apostar a la ruleta clásica |
 | `.blackjack [monto/all]` | `.bj`, `.21` | Jugar Blackjack 21 contra el crupier bot |
+| `.balatro` | `.bltr`, `.bplay`, `.bdiscard`, `.bshop`, `.bnext` | Roguelike Poker Balatro con gráficos en ASCII |
 | `.ruletarusa [monto/all]` | `.rr` | Ruleta rusa de alto riesgo con penas de cárcel |
 | `.apostarpersona @user [monto]` | `.apostarp` | Apuesta donde si pierdes, el usuario mencionado va preso |
 | `.loteria [comprar/ver]` | `.lotto` | Participar en el pozo de lotería acumulativo |

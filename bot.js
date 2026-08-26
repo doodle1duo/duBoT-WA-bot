@@ -591,6 +591,297 @@ function getLoveScore(u1, u2) {
 
 
 // ==========================================
+// 🃏 BALATRO ROGUELIKE POKER ENGINE (ASCII)
+// ==========================================
+const activeBalatroGames = new Map(); // userJid -> gameSession
+
+const BALATRO_SUITS = ['♥', '♦', '♣', '♠'];
+const BALATRO_RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+const BALATRO_RANK_VALUES = {
+    '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10,
+    'J': 10, 'Q': 10, 'K': 10, 'A': 11
+};
+const BALATRO_RANK_ORDER = {
+    '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10,
+    'J': 11, 'Q': 12, 'K': 13, 'A': 14
+};
+
+const BALATRO_BASE_HANDS = {
+    'Carta Alta': { chips: 5, mult: 1, name: 'Carta Alta' },
+    'Pareja': { chips: 10, mult: 2, name: 'Pareja' },
+    'Doble Pareja': { chips: 20, mult: 2, name: 'Doble Pareja' },
+    'Trío': { chips: 30, mult: 3, name: 'Trío' },
+    'Escalera': { chips: 30, mult: 4, name: 'Escalera' },
+    'Color': { chips: 35, mult: 4, name: 'Color' },
+    'Full House': { chips: 40, mult: 4, name: 'Full House' },
+    'Póker': { chips: 60, mult: 7, name: 'Póker' },
+    'Escalera de Color': { chips: 100, mult: 8, name: 'Escalera de Color' },
+    'Escalera Real': { chips: 100, mult: 8, name: 'Escalera Real' }
+};
+
+const BALATRO_JOKERS_DB = [
+    { id: 'joker', name: 'Joker', rarity: 'Común', cost: 2, desc: '+4 Mult', type: 'add_mult', value: 4 },
+    { id: 'greedy', name: 'Greedy Joker', rarity: 'Común', cost: 5, desc: '+4 Mult por cada ♦ Diamante jugado', type: 'suit_mult', suit: '♦', value: 4 },
+    { id: 'lusty', name: 'Lusty Joker', rarity: 'Común', cost: 5, desc: '+4 Mult por cada ♥ Corazón jugado', type: 'suit_mult', suit: '♥', value: 4 },
+    { id: 'wrathful', name: 'Wrathful Joker', rarity: 'Común', cost: 5, desc: '+4 Mult por cada ♠ Pica jugada', type: 'suit_mult', suit: '♠', value: 4 },
+    { id: 'gluttonous', name: 'Gluttonous Joker', rarity: 'Común', cost: 5, desc: '+4 Mult por cada ♣ Trébol jugado', type: 'suit_mult', suit: '♣', value: 4 },
+    { id: 'jolly', name: 'Jolly Joker', rarity: 'Común', cost: 3, desc: '+8 Mult si la mano contiene Pareja', type: 'hand_mult', hand: 'Pareja', value: 8 },
+    { id: 'zany', name: 'Zany Joker', rarity: 'Común', cost: 4, desc: '+12 Mult si la mano contiene Trío', type: 'hand_mult', hand: 'Trío', value: 12 },
+    { id: 'mad', name: 'Mad Joker', rarity: 'Común', cost: 4, desc: '+20 Mult si la mano contiene Doble Pareja', type: 'hand_mult', hand: 'Doble Pareja', value: 20 },
+    { id: 'crazy', name: 'Crazy Joker', rarity: 'Común', cost: 4, desc: '+24 Mult si la mano contiene Escalera', type: 'hand_mult', hand: 'Escalera', value: 24 },
+    { id: 'droll', name: 'Droll Joker', rarity: 'Común', cost: 4, desc: '+20 Mult si la mano contiene Color', type: 'hand_mult', hand: 'Color', value: 20 },
+    { id: 'sly', name: 'Sly Joker', rarity: 'Común', cost: 3, desc: '+50 Fichas si contiene Pareja', type: 'hand_chips', hand: 'Pareja', value: 50 },
+    { id: 'wily', name: 'Wily Joker', rarity: 'Común', cost: 4, desc: '+100 Fichas si contiene Trío', type: 'hand_chips', hand: 'Trío', value: 100 },
+    { id: 'clever', name: 'Clever Joker', rarity: 'Común', cost: 4, desc: '+80 Fichas si contiene Doble Pareja', type: 'hand_chips', hand: 'Doble Pareja', value: 80 },
+    { id: 'devious', name: 'Devious Joker', rarity: 'Común', cost: 4, desc: '+100 Fichas si contiene Escalera', type: 'hand_chips', hand: 'Escalera', value: 100 },
+    { id: 'crafty', name: 'Crafty Joker', rarity: 'Común', cost: 4, desc: '+80 Fichas si contiene Color', type: 'hand_chips', hand: 'Color', value: 80 },
+    { id: 'half', name: 'Half Joker', rarity: 'Común', cost: 5, desc: '+20 Mult si juegas 3 cartas o menos', type: 'half_joker', value: 20 },
+    { id: 'banner', name: 'Banner', rarity: 'Común', cost: 5, desc: '+40 Fichas por cada Descarte restante', type: 'banner', value: 40 },
+    { id: 'mystic', name: 'Mystic Summit', rarity: 'Común', cost: 5, desc: '+15 Mult cuando te quedan 0 Descartes', type: 'mystic', value: 15 },
+    { id: 'popcorn', name: 'Popcorn', rarity: 'Común', cost: 5, desc: '+20 Mult (-4 Mult tras cada ciega)', type: 'popcorn', value: 20 },
+    { id: 'bull', name: 'Bull', rarity: 'Infrecuente', cost: 6, desc: '+2 Fichas por cada $1 en partida', type: 'bull', value: 2 },
+    { id: 'supernova', name: 'Supernova', rarity: 'Infrecuente', cost: 6, desc: '+Mult igual a veces jugada esta mano', type: 'supernova' },
+    { id: 'even_steven', name: 'Even Steven', rarity: 'Común', cost: 4, desc: '+4 Mult por cada carta par jugada', type: 'even', value: 4 },
+    { id: 'odd_todd', name: 'Odd Todd', rarity: 'Común', cost: 4, desc: '+30 Fichas por cada carta impar', type: 'odd', value: 30 },
+    { id: 'scholar', name: 'Scholar', rarity: 'Común', cost: 4, desc: '+20 Fichas y +4 Mult por cada As', type: 'scholar', chips: 20, mult: 4 },
+    { id: 'walkie', name: 'Walkie Talkie', rarity: 'Común', cost: 4, desc: '+10 Fichas y +4 Mult por cada 10 o 4', type: 'walkie', chips: 10, mult: 4 },
+    { id: 'duo', name: 'The Duo', rarity: 'Raro', cost: 8, desc: '×2 Mult si contiene Pareja', type: 'xmult_hand', hand: 'Pareja', value: 2 },
+    { id: 'trio', name: 'The Trio', rarity: 'Raro', cost: 8, desc: '×3 Mult si contiene Trío', type: 'xmult_hand', hand: 'Trío', value: 3 },
+    { id: 'order', name: 'The Order', rarity: 'Raro', cost: 8, desc: '×3 Mult si contiene Escalera', type: 'xmult_hand', hand: 'Escalera', value: 3 },
+    { id: 'tribe', name: 'The Tribe', rarity: 'Raro', cost: 8, desc: '×3 Mult si contiene Color', type: 'xmult_hand', hand: 'Color', value: 3 },
+    { id: 'cavendish', name: 'Cavendish', rarity: 'Raro', cost: 8, desc: '×3 Mult global', type: 'cavendish', value: 3 }
+];
+
+const BALATRO_PLANETS_DB = [
+    { id: 'pluto', name: '🪐 Plutón', hand: 'Carta Alta', chips: 10, mult: 1, cost: 3 },
+    { id: 'mercury', name: '🪐 Mercurio', hand: 'Pareja', chips: 15, mult: 1, cost: 3 },
+    { id: 'uranus', name: '🪐 Urano', hand: 'Doble Pareja', chips: 20, mult: 2, cost: 3 },
+    { id: 'venus', name: '🪐 Venus', hand: 'Trío', chips: 30, mult: 2, cost: 3 },
+    { id: 'saturn', name: '🪐 Saturno', hand: 'Escalera', chips: 30, mult: 3, cost: 3 },
+    { id: 'jupiter', name: '🪐 Júpiter', hand: 'Color', chips: 35, mult: 3, cost: 3 },
+    { id: 'earth', name: '🪐 Tierra', hand: 'Full House', chips: 35, mult: 3, cost: 3 },
+    { id: 'mars', name: '🪐 Marte', hand: 'Póker', chips: 40, mult: 4, cost: 3 },
+    { id: 'neptune', name: '🪐 Neptuno', hand: 'Escalera de Color', chips: 50, mult: 5, cost: 3 }
+];
+
+const BALATRO_ANTE_TARGETS = [
+    { small: 300, big: 450, boss: 600, reward: 3 },
+    { small: 800, big: 1200, boss: 1600, reward: 4 },
+    { small: 2000, big: 3000, boss: 4000, reward: 5 },
+    { small: 5000, big: 7500, boss: 10000, reward: 6 },
+    { small: 11000, big: 16500, boss: 22000, reward: 7 },
+    { small: 20000, big: 30000, boss: 40000, reward: 8 },
+    { small: 35000, big: 50000, boss: 70000, reward: 9 },
+    { small: 50000, big: 75000, boss: 100000, reward: 10 }
+];
+
+const BALATRO_BOSS_MODIFIERS = [
+    { name: 'The Club ♣', desc: 'Las cartas de ♣ no suman fichas', suitDebuff: '♣' },
+    { name: 'The Goad ♠', desc: 'Las cartas de ♠ no suman fichas', suitDebuff: '♠' },
+    { name: 'The Window ♦', desc: 'Las cartas de ♦ no suman fichas', suitDebuff: '♦' },
+    { name: 'The Head ♥', desc: 'Las cartas de ♥ no suman fichas', suitDebuff: '♥' },
+    { name: 'The Water 💧', desc: 'Empiezas con 0 Descartes esta ronda', zeroDiscards: true },
+    { name: 'The Needle 🪡', desc: 'Solo puedes jugar 1 Mano esta ronda', oneHand: true },
+    { name: 'The Wall 🧱', desc: 'Objetivo de Fichas multiplicado ×2', doubleTarget: true }
+];
+
+function createBalatroDeck() {
+    const deck = [];
+    for (const suit of BALATRO_SUITS) {
+        for (const rank of BALATRO_RANKS) {
+            deck.push({ rank, suit, id: `${rank}${suit}` });
+        }
+    }
+    for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+    return deck;
+}
+
+function renderAsciiCards(cards) {
+    if (!cards || cards.length === 0) return '(Mano vacía)';
+
+    const chunkSize = cards.length <= 5 ? 5 : 4;
+    const rows = [];
+
+    for (let i = 0; i < cards.length; i += chunkSize) {
+        const chunk = cards.slice(i, i + chunkSize);
+        const top = chunk.map(() => '┌───┐').join(' ');
+        const mid1 = chunk.map(c => {
+            const r = c.rank === '10' ? '10' : ' ' + c.rank;
+            return `│${r}${c.suit}│`;
+        }).join(' ');
+        const mid2 = chunk.map((_, idx) => {
+            const num = i + idx + 1;
+            return `│(${num})│`;
+        }).join(' ');
+        const bot = chunk.map(() => '└───┘').join(' ');
+        rows.push(`${top}\n${mid1}\n${mid2}\n${bot}`);
+    }
+    return rows.join('\n');
+}
+
+function evaluateBalatroPokerHand(cards) {
+    if (!cards || cards.length === 0) {
+        return { name: 'Carta Alta', scoringCards: [] };
+    }
+    const sorted = [...cards].sort((a, b) => BALATRO_RANK_ORDER[b.rank] - BALATRO_RANK_ORDER[a.rank]);
+    const rankCounts = {};
+    const suitCounts = {};
+    for (const c of sorted) {
+        rankCounts[c.rank] = (rankCounts[c.rank] || 0) + 1;
+        suitCounts[c.suit] = (suitCounts[c.suit] || 0) + 1;
+    }
+
+    const isFlush = Object.values(suitCounts).some(cnt => cnt >= 5);
+    const uniqueRankVals = Array.from(new Set(sorted.map(c => BALATRO_RANK_ORDER[c.rank]))).sort((a, b) => b - a);
+
+    let isStraight = false;
+    let isRoyal = false;
+    if (uniqueRankVals.length >= 5) {
+        for (let i = 0; i <= uniqueRankVals.length - 5; i++) {
+            if (uniqueRankVals[i] - uniqueRankVals[i + 4] === 4) {
+                isStraight = true;
+                if (uniqueRankVals[i] === 14) isRoyal = true;
+                break;
+            }
+        }
+        if (!isStraight && uniqueRankVals.includes(14) && uniqueRankVals.includes(2) && uniqueRankVals.includes(3) && uniqueRankVals.includes(4) && uniqueRankVals.includes(5)) {
+            isStraight = true;
+        }
+    }
+
+    const counts = Object.values(rankCounts).sort((a, b) => b - a);
+
+    if (isFlush && isStraight && isRoyal) return { name: 'Escalera Real', scoringCards: sorted };
+    if (isFlush && isStraight) return { name: 'Escalera de Color', scoringCards: sorted };
+    if (counts[0] === 4) return { name: 'Póker', scoringCards: sorted };
+    if (counts[0] === 3 && counts[1] >= 2) return { name: 'Full House', scoringCards: sorted };
+    if (isFlush) return { name: 'Color', scoringCards: sorted };
+    if (isStraight) return { name: 'Escalera', scoringCards: sorted };
+    if (counts[0] === 3) return { name: 'Trío', scoringCards: sorted };
+    if (counts[0] === 2 && counts[1] === 2) return { name: 'Doble Pareja', scoringCards: sorted };
+    if (counts[0] === 2) return { name: 'Pareja', scoringCards: sorted };
+    return { name: 'Carta Alta', scoringCards: sorted };
+}
+
+function initBalatroSession(userJid) {
+    const deck = createBalatroDeck();
+    const hand = deck.splice(0, 8);
+    const handLevels = {};
+    for (const [k, v] of Object.entries(BALATRO_BASE_HANDS)) {
+        handLevels[k] = { level: 1, chips: v.chips, mult: v.mult };
+    }
+    const session = {
+        userJid,
+        ante: 1,
+        blindIndex: 0, // 0: Small, 1: Big, 2: Boss
+        score: 0,
+        targetScore: 300,
+        handsLeft: 4,
+        discardsLeft: 3,
+        money: 4,
+        jokers: [{ ...BALATRO_JOKERS_DB[0] }], // Starts with classic Joker
+        handLevels,
+        handCounts: {},
+        deck,
+        hand,
+        state: 'playing', // 'playing' | 'shop' | 'game_over' | 'victory'
+        shopOffers: [],
+        bossModifier: null,
+        lastPlayed: null,
+        startedAt: Date.now()
+    };
+    activeBalatroGames.set(userJid, session);
+    return session;
+}
+
+function generateBalatroShop(session) {
+    const availableJokers = BALATRO_JOKERS_DB.filter(j => !session.jokers.some(ej => ej.id === j.id));
+    const shuffledJokers = [...availableJokers].sort(() => Math.random() - 0.5);
+    const j1 = shuffledJokers[0] ? { ...shuffledJokers[0], shopType: 'joker' } : null;
+    const j2 = shuffledJokers[1] ? { ...shuffledJokers[1], shopType: 'joker' } : null;
+    const shuffledPlanets = [...BALATRO_PLANETS_DB].sort(() => Math.random() - 0.5);
+    const p1 = shuffledPlanets[0] ? { ...shuffledPlanets[0], shopType: 'planet' } : null;
+    session.shopOffers = [j1, j2, p1].filter(Boolean);
+}
+
+function getBlindName(index) {
+    if (index === 0) return 'Small Blind';
+    if (index === 1) return 'Big Blind';
+    return 'Boss Blind 👑';
+}
+
+function renderBalatroState(game, p) {
+    const blindName = getBlindName(game.blindIndex);
+    const jokersList = game.jokers.length > 0 
+        ? game.jokers.map((j, i) => ` • *${j.name}:* _${j.desc}_`).join('\n')
+        : ' • _(Ninguno)_';
+
+    let bossText = '';
+    if (game.blindIndex === 2 && game.bossModifier) {
+        bossText = `\n⚠️ *BOSS:* ${game.bossModifier.name} — _${game.bossModifier.desc}_`;
+    }
+
+    const asciiHand = renderAsciiCards(game.hand);
+
+    return `🃏 *BALATRO* — *ANTE ${game.ante} / 8* 🃏
+━━━━━━━━━━━━━━━━━━━━
+👁️ *Ciega:* ${blindName}
+🎯 *Objetivo:* ${game.targetScore.toLocaleString()} Fichas
+📊 *Puntos:* ${game.score.toLocaleString()} / ${game.targetScore.toLocaleString()}
+✋ *Manos:* ${game.handsLeft}/4   |   🔄 *Descartes:* ${game.discardsLeft}/3
+💰 *Dinero:* $${game.money}${bossText}
+━━━━━━━━━━━━━━━━━━━━
+🃏 *Jokers Equipados (${game.jokers.length}/5):*
+${jokersList}
+━━━━━━━━━━━━━━━━━━━━
+
+🎴 *TU MANO (${game.hand.length} cartas):*
+\`\`\`
+${asciiHand}
+\`\`\`
+
+🎮 *COMANDOS:*
+• *${p}bplay 1 2 3 4 5* — Jugar mano (1 a 5 cartas)
+• *${p}bdiscard 1 2 3* — Descartar y robar nuevas
+• *${p}balatro info* — Ver reglas y manos
+• *${p}balatro forfeit* — Rendirse`;
+}
+
+function renderBalatroShop(game, p) {
+    const offers = game.shopOffers.map((item, i) => {
+        if (item.shopType === 'joker') {
+            return `[${i + 1}] 🃏 *${item.name}* — *$${item.cost}*\n     _${item.desc}_ (${item.rarity})`;
+        } else {
+            return `[${i + 1}] ${item.name} — *$${item.cost}*\n     _Mejora ${item.hand}_ (+${item.chips} Fichas, +${item.mult} Mult)`;
+        }
+    }).join('\n\n');
+
+    const jokersList = game.jokers.length > 0 
+        ? game.jokers.map(j => ` • *${j.name}:* _${j.desc}_`).join('\n')
+        : ' • _(Sin jokers)_';
+
+    return `🛒 *TIENDA DE BALATRO* 🛒
+━━━━━━━━━━━━━━━━━━━━
+💰 *Tu Dinero:* $${game.money}  |  🃏 *Jokers:* (${game.jokers.length}/5)
+━━━━━━━━━━━━━━━━━━━━
+🃏 *Tus Jokers:*
+${jokersList}
+━━━━━━━━━━━━━━━━━━━━
+📦 *Artículos en Venta:*
+
+${offers || '_(Tienda agotada)_'}
+
+━━━━━━━━━━━━━━━━━━━━
+🎮 *Acciones:*
+• *${p}balatro comprar [1-3]* — Comprar artículo
+• *${p}balatro reroll* — Renovar tienda ($5)
+• *${p}bnext* — Avanzar a la siguiente Ciega`;
+}
+
+// ==========================================
 // 📡 SISTEMA DE INTER-CHAT VIRTUAL (IV)
 // ==========================================
 const activeIVRooms = new Map();       // roomId -> { name, creator, members: Set([chatJid]), createdAt }
@@ -995,7 +1286,8 @@ const ALL_COMMANDS = [
     'admins', 'addcmd', 'hora', 'time',
     'tagall', 'todos', 'hidetag', 'notificar', 'kick', 'expulsar', 'infogrupo', 'groupinfo', 'link', 'enlace',
     'duelo', 'pvp', 'aceptar', 'rechazar', 'tts', 'voz', 'clima', 'weather', 'calc', 'math',
-    '8ball', 'amor', 'ship', 'ruletaexpulsion', 'ruletaban'
+    '8ball', 'amor', 'ship', 'ruletaexpulsion', 'ruletaban',
+    'balatro', 'bltr', 'bplay', 'bdiscard', 'bshop', 'bnext', 'binfo', 'poker'
 ];
 
 function getClosestCommand(typedCmd, availableCmds) {
@@ -1660,7 +1952,16 @@ async function connectToWhatsApp() {
                 'pareja': 'amor',
                 'love': 'amor',
                 'ruletaexpulsion': 'ruletaexpulsion',
-                'ruletaban': 'ruletaexpulsion'
+                'ruletaban': 'ruletaexpulsion',
+                'balatro': 'balatro',
+                'bltr': 'balatro',
+                'bplay': 'bplay',
+                'bdiscard': 'bdiscard',
+                'bshop': 'bshop',
+                'bnext': 'bnext',
+                'binfo': 'binfo',
+                'poker': 'balatro',
+                'jokergame': 'balatro'
             };
 
             let finalCommand = aliases[command] || command;
@@ -1740,6 +2041,7 @@ async function connectToWhatsApp() {
 *${currentPrefix}slots [monto/all]* — Tragamonedas (.sl)
 *${currentPrefix}roulette [rojo|negro] [monto/all]* — Ruleta (.rl)
 *${currentPrefix}blackjack [monto/all]* — Blackjack vs bot (.bj)
+*${currentPrefix}balatro* — Roguelike Poker en ASCII (.bltr, .bplay, .bdiscard, .bshop)
 *${currentPrefix}ruletarusa [monto/all]* — Ruleta Rusa de alto riesgo (.rr)
 *${currentPrefix}apostarpersona [@user] [monto/all]* — Si pierdes, @user va a la cárcel (.apostarp)
 *${currentPrefix}loteria [comprar|ver]* — Lotería global acumulativa
@@ -5634,6 +5936,539 @@ _Datos meteorológicos en tiempo real._`;
                     break;
                 }
 
+                case 'binfo':
+                case 'bplay':
+                case 'bdiscard':
+                case 'bshop':
+                case 'bnext':
+                case 'balatro': {
+                    if (user.inJail) {
+                        await sock.sendMessage(from, { text: `🚔 *¡Estás en la cárcel!* Paga tu deuda con *${getPrefix()}pagardeuda* para jugar.` }, { quoted: msg });
+                        break;
+                    }
+
+                    const p = getPrefix();
+                    let subCmd = '';
+                    let subArgs = '';
+
+                    if (finalCommand === 'bplay') {
+                        subCmd = 'play';
+                        subArgs = argText;
+                    } else if (finalCommand === 'bdiscard') {
+                        subCmd = 'discard';
+                        subArgs = argText;
+                    } else if (finalCommand === 'bshop') {
+                        subCmd = 'shop';
+                        subArgs = argText;
+                    } else if (finalCommand === 'bnext') {
+                        subCmd = 'next';
+                        subArgs = argText;
+                    } else if (finalCommand === 'binfo') {
+                        subCmd = 'info';
+                        subArgs = argText;
+                    } else {
+                        const parts = argText.trim().split(/\s+/);
+                        subCmd = (parts[0] || '').toLowerCase();
+                        subArgs = parts.slice(1).join(' ');
+                    }
+
+                    let game = activeBalatroGames.get(sender);
+
+                    // 1. INFO / REGLAS
+                    if (subCmd === 'info' || subCmd === 'reglas' || subCmd === 'ayuda' || subCmd === 'help') {
+                        const infoMsg = `🃏 *GUÍA OFICIAL DE BALATRO (ROGUELIKE POKER)* 🃏
+
+🎯 *OBJETIVO:*
+Superar el puntaje objetivo (Fichas) de cada Ciega (Small Blind, Big Blind y Boss Blind) a lo largo de 8 ANTES usando Manos de Póker.
+
+📊 *FÓRMULA DE PUNTOS:*
+*Puntos = Fichas Totales × Multiplicador (Mult)*
+
+🎴 *MANOS DE PÓKER BASE:*
+• *Escalera Real:* 100 Fichas × 8 Mult (10, J, Q, K, A mismo palo)
+• *Escalera de Color:* 100 Fichas × 8 Mult
+• *Póker (4 iguales):* 60 Fichas × 7 Mult
+• *Full House (3+2):* 40 Fichas × 4 Mult
+• *Color (5 mismo palo):* 35 Fichas × 4 Mult
+• *Escalera (5 consecutivas):* 30 Fichas × 4 Mult
+• *Trío (3 iguales):* 30 Fichas × 3 Mult
+• *Doble Pareja:* 20 Fichas × 2 Mult
+• *Pareja:* 10 Fichas × 2 Mult
+• *Carta Alta:* 5 Fichas × 1 Mult
+_¡Cada carta jugada suma sus fichas (2-10 suman valor, J/Q/K = 10, As = 11)!_
+
+🃏 *JOKERS & TIENDA:*
+Equipa hasta 5 Jokers que dan bonificaciones gigantescas (+Fichas, +Mult o ×Mult). Entre ciegas, compra Jokers o Cartas de Planetas para subir el nivel de tus manos.
+
+🎮 *COMANDOS:*
+• *${p}balatro* — Iniciar o ver partida activa
+• *${p}bplay 1 2 3 4 5* — Jugar hasta 5 cartas de tu mano
+• *${p}bdiscard 1 2 3* — Descartar y robar nuevas
+• *${p}balatro comprar 1* — Comprar en la tienda
+• *${p}balatro reroll* — Renovar tienda ($5)
+• *${p}bnext* — Siguiente Ciega
+• *${p}balatro forfeit* — Rendirse`;
+                        await sock.sendMessage(from, { text: infoMsg }, { quoted: msg });
+                        break;
+                    }
+
+                    // 2. FORFEIT / SALIR
+                    if (subCmd === 'forfeit' || subCmd === 'salir' || subCmd === 'rendirse') {
+                        if (!game) {
+                            await sock.sendMessage(from, { text: `❌ No tienes ninguna partida de Balatro activa. Inicia una con *${p}balatro*.` }, { quoted: msg });
+                            break;
+                        }
+                        activeBalatroGames.delete(sender);
+                        await sock.sendMessage(from, { text: `🏳️ Te has rendido de tu partida de Balatro en el *Ante ${game.ante}* (${getBlindName(game.blindIndex)}).` }, { quoted: msg });
+                        break;
+                    }
+
+                    // 3. START / VIEW GAME (Sin subcomando o 'ver')
+                    if (!subCmd || subCmd === 'ver' || subCmd === 'iniciar' || subCmd === 'jugar' || subCmd === 'status') {
+                        if (!game) {
+                            game = initBalatroSession(sender);
+                            await sock.sendMessage(from, { 
+                                text: `🃏 *¡NUEVA PARTIDA DE BALATRO INICIADA!* 🃏\n\n${renderBalatroState(game, p)}` 
+                            }, { quoted: msg });
+                        } else {
+                            if (game.state === 'shop') {
+                                await sock.sendMessage(from, { text: renderBalatroShop(game, p) }, { quoted: msg });
+                            } else {
+                                await sock.sendMessage(from, { text: renderBalatroState(game, p) }, { quoted: msg });
+                            }
+                        }
+                        break;
+                    }
+
+                    // 4. JUGAR MANO (PLAY)
+                    if (subCmd === 'play' || subCmd === 'j') {
+                        if (!game) {
+                            await sock.sendMessage(from, { text: `❌ No tienes una partida activa. Inicia una con *${p}balatro*.` }, { quoted: msg });
+                            break;
+                        }
+                        if (game.state === 'shop') {
+                            await sock.sendMessage(from, { text: `🛒 Estás en la Tienda. Usa *${p}balatro comprar [1-3]* o *${p}bnext* para continuar a la siguiente ciega.` }, { quoted: msg });
+                            break;
+                        }
+
+                        // Parse indices
+                        const rawIndices = (subArgs || '').replace(/,/g, ' ').trim().split(/\s+/).filter(Boolean);
+                        if (rawIndices.length === 0) {
+                            await sock.sendMessage(from, { text: `❌ Selecciona los números de las cartas a jugar (entre 1 y 5 cartas).\n_Ejemplo: *${p}bplay 1 2 3 4 5*_` }, { quoted: msg });
+                            break;
+                        }
+
+                        const indices = Array.from(new Set(rawIndices.map(n => parseInt(n, 10)).filter(n => !isNaN(n))));
+                        if (indices.length < 1 || indices.length > 5) {
+                            await sock.sendMessage(from, { text: `❌ Debes jugar entre *1 y 5 cartas*.\n_Ejemplo: *${p}bplay 1 3 4*_` }, { quoted: msg });
+                            break;
+                        }
+
+                        const invalid = indices.find(i => i < 1 || i > game.hand.length);
+                        if (invalid) {
+                            await sock.sendMessage(from, { text: `❌ Carta [${invalid}] no válida. Tienes cartas del 1 al ${game.hand.length}.` }, { quoted: msg });
+                            break;
+                        }
+
+                        // Extract selected cards
+                        const playedCards = indices.map(i => game.hand[i - 1]);
+                        const pokerHand = evaluateBalatroPokerHand(playedCards);
+
+                        // Base values from hand level
+                        const handLvl = game.handLevels[pokerHand.name] || { level: 1, chips: 10, mult: 2 };
+                        let baseChips = handLvl.chips;
+                        let baseMult = handLvl.mult;
+
+                        // Card chips calculation
+                        let cardChips = 0;
+                        const cardBreakdowns = [];
+                        for (const c of playedCards) {
+                            let val = BALATRO_RANK_VALUES[c.rank] || 0;
+                            // Check boss suit debuff
+                            if (game.blindIndex === 2 && game.bossModifier?.suitDebuff === c.suit) {
+                                val = 0;
+                            }
+                            cardChips += val;
+                            cardBreakdowns.push(`${c.rank}${c.suit} (${val})`);
+                        }
+
+                        // Supernova tracking
+                        game.handCounts[pokerHand.name] = (game.handCounts[pokerHand.name] || 0) + 1;
+
+                        // Joker processing (Additive)
+                        let jokerChips = 0;
+                        let jokerAddMult = 0;
+                        let jokerXMult = 1.0;
+                        const jokerLogs = [];
+
+                        for (const j of game.jokers) {
+                            if (j.type === 'add_mult') {
+                                jokerAddMult += j.value;
+                                jokerLogs.push(` • ${j.name}: +${j.value} Mult`);
+                            } else if (j.type === 'suit_mult') {
+                                const count = playedCards.filter(c => c.suit === j.suit).length;
+                                if (count > 0) {
+                                    const bonus = count * j.value;
+                                    jokerAddMult += bonus;
+                                    jokerLogs.push(` • ${j.name} (x${count} ${j.suit}): +${bonus} Mult`);
+                                }
+                            } else if (j.type === 'hand_mult' && pokerHand.name === j.hand) {
+                                jokerAddMult += j.value;
+                                jokerLogs.push(` • ${j.name} (${j.hand}): +${j.value} Mult`);
+                            } else if (j.type === 'hand_chips' && pokerHand.name === j.hand) {
+                                jokerChips += j.value;
+                                jokerLogs.push(` • ${j.name} (${j.hand}): +${j.value} Fichas`);
+                            } else if (j.type === 'half_joker' && playedCards.length <= 3) {
+                                jokerAddMult += j.value;
+                                jokerLogs.push(` • ${j.name} (≤3 cartas): +${j.value} Mult`);
+                            } else if (j.type === 'banner') {
+                                const bonus = game.discardsLeft * j.value;
+                                if (bonus > 0) {
+                                    jokerChips += bonus;
+                                    jokerLogs.push(` • ${j.name} (x${game.discardsLeft} descartes): +${bonus} Fichas`);
+                                }
+                            } else if (j.type === 'mystic' && game.discardsLeft === 0) {
+                                jokerAddMult += j.value;
+                                jokerLogs.push(` • ${j.name} (0 descartes): +${j.value} Mult`);
+                            } else if (j.type === 'popcorn') {
+                                jokerAddMult += j.value;
+                                jokerLogs.push(` • ${j.name}: +${j.value} Mult`);
+                            } else if (j.type === 'bull') {
+                                const bonus = game.money * j.value;
+                                if (bonus > 0) {
+                                    jokerChips += bonus;
+                                    jokerLogs.push(` • ${j.name} ($${game.money}): +${bonus} Fichas`);
+                                }
+                            } else if (j.type === 'supernova') {
+                                const count = game.handCounts[pokerHand.name] || 1;
+                                jokerAddMult += count;
+                                jokerLogs.push(` • ${j.name} (x${count} jugadas): +${count} Mult`);
+                            } else if (j.type === 'even') {
+                                const evens = playedCards.filter(c => ['2','4','6','8','10'].includes(c.rank)).length;
+                                if (evens > 0) {
+                                    const bonus = evens * j.value;
+                                    jokerAddMult += bonus;
+                                    jokerLogs.push(` • ${j.name} (x${evens} pares): +${bonus} Mult`);
+                                }
+                            } else if (j.type === 'odd') {
+                                const odds = playedCards.filter(c => ['3','5','7','9','A'].includes(c.rank)).length;
+                                if (odds > 0) {
+                                    const bonus = odds * j.value;
+                                    jokerChips += bonus;
+                                    jokerLogs.push(` • ${j.name} (x${odds} impares): +${bonus} Fichas`);
+                                }
+                            } else if (j.type === 'scholar') {
+                                const aces = playedCards.filter(c => c.rank === 'A').length;
+                                if (aces > 0) {
+                                    jokerChips += aces * j.chips;
+                                    jokerAddMult += aces * j.mult;
+                                    jokerLogs.push(` • ${j.name} (x${aces} Ases): +${aces * j.chips} Fichas, +${aces * j.mult} Mult`);
+                                }
+                            } else if (j.type === 'walkie') {
+                                const tensOrFours = playedCards.filter(c => c.rank === '10' || c.rank === '4').length;
+                                if (tensOrFours > 0) {
+                                    jokerChips += tensOrFours * j.chips;
+                                    jokerAddMult += tensOrFours * j.mult;
+                                    jokerLogs.push(` • ${j.name} (x${tensOrFours}): +${tensOrFours * j.chips} Fichas, +${tensOrFours * j.mult} Mult`);
+                                }
+                            }
+                        }
+
+                        // Joker processing (Multiplicative)
+                        for (const j of game.jokers) {
+                            if (j.type === 'xmult_hand' && pokerHand.name === j.hand) {
+                                jokerXMult *= j.value;
+                                jokerLogs.push(` • ${j.name} (${j.hand}): ×${j.value} Mult`);
+                            } else if (j.type === 'cavendish') {
+                                jokerXMult *= j.value;
+                                jokerLogs.push(` • ${j.name}: ×${j.value} Mult`);
+                            }
+                        }
+
+                        // Final calculation
+                        const totalChips = baseChips + cardChips + jokerChips;
+                        const totalMult = Math.floor((baseMult + jokerAddMult) * jokerXMult);
+                        const handScore = totalChips * totalMult;
+
+                        game.score += handScore;
+                        game.handsLeft--;
+
+                        // Remove played cards from hand (sorted by index desc)
+                        const sortedIndices = [...indices].sort((a, b) => b - a);
+                        for (const idx of sortedIndices) {
+                            game.hand.splice(idx - 1, 1);
+                        }
+
+                        // Draw replacement cards up to 8
+                        while (game.hand.length < 8 && game.deck.length > 0) {
+                            game.hand.push(game.deck.pop());
+                        }
+
+                        const playedAscii = renderAsciiCards(playedCards);
+                        let resultText = `🃏 *MANO JUGADA: [ ${pokerHand.name.toUpperCase()} (Nvl. ${handLvl.level}) ]*\n\`\`\`\n${playedAscii}\n\`\`\`\n`;
+                        resultText += `💥 *CÁLCULO DE PUNTUACIÓN:*\n`;
+                        resultText += ` • *Base:* ${baseChips} Fichas × ${baseMult} Mult\n`;
+                        resultText += ` • *Cartas:* +${cardChips} Fichas [${cardBreakdowns.join(', ')}]\n`;
+                        if (jokerLogs.length > 0) {
+                            resultText += ` • *Jokers:*\n${jokerLogs.join('\n')}\n`;
+                        }
+                        resultText += `👉 *Total Mano:* *${totalChips} Fichas × ${totalMult} Mult = ${handScore.toLocaleString()} PUNTOS!* 🔥\n\n`;
+
+                        // Check Win Blind or Game Over
+                        if (game.score >= game.targetScore) {
+                            // BEAT THE BLIND
+                            if (game.ante === 8 && game.blindIndex === 2) {
+                                // 🏆 FINAL VICTORY!
+                                activeBalatroGames.delete(sender);
+                                const rewardBotMoney = 5000;
+                                const rewardXP = 500;
+                                user.bal += rewardBotMoney;
+                                addXP(user, rewardXP);
+                                saveDB(db);
+
+                                resultText += `🏆👑 *¡¡¡VICTORIA TOTAL EN BALATRO!!!* 👑🏆\n\n`;
+                                resultText += `🎉 ¡Has derrotado al Boss Final del *Ante 8* con una puntuación legendaria!\n`;
+                                resultText += `💰 *Premio de Campeón:* +$${rewardBotMoney.toLocaleString()} y +${rewardXP} XP!\n`;
+                                resultText += `💵 *Tu nuevo Balance:* $${user.bal.toLocaleString()}`;
+                                await sock.sendMessage(from, { text: resultText }, { quoted: msg });
+                                break;
+                            }
+
+                            // Regular Blind Defeated
+                            const anteReward = BALATRO_ANTE_TARGETS[game.ante - 1].reward;
+                            const handsBonus = game.handsLeft;
+                            const interest = Math.min(5, Math.floor(game.money / 5));
+                            const totalReward = anteReward + handsBonus + interest;
+                            game.money += totalReward;
+
+                            // Degrade Popcorn
+                            const popcorn = game.jokers.find(j => j.id === 'popcorn');
+                            if (popcorn) {
+                                popcorn.value -= 4;
+                                if (popcorn.value <= 0) {
+                                    game.jokers = game.jokers.filter(j => j.id !== 'popcorn');
+                                    resultText += `🍿 *Popcorn* se ha terminado de comer y desaparece.\n`;
+                                }
+                            }
+
+                            // Advance blind
+                            game.blindIndex++;
+                            if (game.blindIndex > 2) {
+                                game.blindIndex = 0;
+                                game.ante++;
+                            }
+
+                            // Set next target
+                            const anteTargets = BALATRO_ANTE_TARGETS[game.ante - 1];
+                            if (game.blindIndex === 0) game.targetScore = anteTargets.small;
+                            else if (game.blindIndex === 1) game.targetScore = anteTargets.big;
+                            else {
+                                game.targetScore = anteTargets.boss;
+                                game.bossModifier = BALATRO_BOSS_MODIFIERS[Math.floor(Math.random() * BALATRO_BOSS_MODIFIERS.length)];
+                                if (game.bossModifier.doubleTarget) game.targetScore *= 2;
+                            }
+
+                            game.score = 0;
+                            game.state = 'shop';
+                            generateBalatroShop(game);
+
+                            resultText += `✅ *¡CIEGA SUPERADA CON ÉXITO!* 🎉\n`;
+                            resultText += `💰 *Ganancias:* +$${anteReward} (Ciega) +$${handsBonus} (Manos sobrantes) +$${interest} (Interés) = *+$${totalReward}*\n`;
+                            resultText += `💵 *Dinero en Partida:* $${game.money}\n\n`;
+                            resultText += `🏪 *ENTRANDO A LA TIENDA...*\n\n${renderBalatroShop(game, p)}`;
+
+                            await sock.sendMessage(from, { text: resultText }, { quoted: msg });
+                            break;
+                        } else if (game.handsLeft <= 0) {
+                            // 💀 GAME OVER
+                            activeBalatroGames.delete(sender);
+                            resultText += `💀 *¡GAME OVER!* 💀\n\n`;
+                            resultText += `Te has quedado sin manos disponibles.\n`;
+                            resultText += `📊 *Puntaje final:* ${game.score.toLocaleString()} / ${game.targetScore.toLocaleString()} Fichas\n`;
+                            resultText += `📍 Llegaste hasta el *Ante ${game.ante}* (${getBlindName(game.blindIndex)}).\n\n`;
+                            resultText += `_Usa *${p}balatro* para comenzar una nueva partida._`;
+
+                            await sock.sendMessage(from, { text: resultText }, { quoted: msg });
+                            break;
+                        } else {
+                            // Hand played, still in round
+                            resultText += `📊 *PUNTUACIÓN ACTUAL:* ${game.score.toLocaleString()} / ${game.targetScore.toLocaleString()} Fichas\n`;
+                            resultText += `✋ *Manos restantes:* ${game.handsLeft}/4  |  🔄 *Descartes:* ${game.discardsLeft}/3\n\n`;
+                            resultText += `🎴 *TU MANO ACTUALIZADA:*\n\`\`\`\n${renderAsciiCards(game.hand)}\n\`\`\`\n\n`;
+                            resultText += `🎮 Usa *${p}bplay [cartas]* o *${p}bdiscard [cartas]*`;
+
+                            await sock.sendMessage(from, { text: resultText }, { quoted: msg });
+                            break;
+                        }
+                    }
+
+                    // 5. DESCARTAR (DISCARD)
+                    if (subCmd === 'discard' || subCmd === 'd' || subCmd === 'descartar') {
+                        if (!game) {
+                            await sock.sendMessage(from, { text: `❌ No tienes una partida activa. Inicia una con *${p}balatro*.` }, { quoted: msg });
+                            break;
+                        }
+                        if (game.state === 'shop') {
+                            await sock.sendMessage(from, { text: `🛒 Estás en la Tienda. Usa *${p}bnext* para continuar.` }, { quoted: msg });
+                            break;
+                        }
+                        if (game.discardsLeft <= 0) {
+                            await sock.sendMessage(from, { text: `❌ No te quedan descartes en esta ronda. Debes jugar una mano con *${p}bplay*.` }, { quoted: msg });
+                            break;
+                        }
+
+                        const rawIndices = (subArgs || '').replace(/,/g, ' ').trim().split(/\s+/).filter(Boolean);
+                        if (rawIndices.length === 0) {
+                            await sock.sendMessage(from, { text: `❌ Selecciona los números de las cartas a descartar.\n_Ejemplo: *${p}bdiscard 1 2 3*_` }, { quoted: msg });
+                            break;
+                        }
+
+                        const indices = Array.from(new Set(rawIndices.map(n => parseInt(n, 10)).filter(n => !isNaN(n))));
+                        if (indices.length < 1 || indices.length > 5) {
+                            await sock.sendMessage(from, { text: `❌ Puedes descartar entre *1 y 5 cartas* a la vez.` }, { quoted: msg });
+                            break;
+                        }
+
+                        const invalid = indices.find(i => i < 1 || i > game.hand.length);
+                        if (invalid) {
+                            await sock.sendMessage(from, { text: `❌ Carta [${invalid}] no válida. Tienes cartas del 1 al ${game.hand.length}.` }, { quoted: msg });
+                            break;
+                        }
+
+                        // Discard and draw
+                        const sortedIndices = [...indices].sort((a, b) => b - a);
+                        for (const idx of sortedIndices) {
+                            game.hand.splice(idx - 1, 1);
+                        }
+                        while (game.hand.length < 8 && game.deck.length > 0) {
+                            game.hand.push(game.deck.pop());
+                        }
+
+                        game.discardsLeft--;
+
+                        let discardText = `🔄 *Descartaste ${indices.length} carta(s).* Te quedan *${game.discardsLeft}/3* descartes.\n\n`;
+                        discardText += `🎴 *TU NUEVA MANO:*\n\`\`\`\n${renderAsciiCards(game.hand)}\n\`\`\`\n\n`;
+                        discardText += `🎮 Usa *${p}bplay 1 2 3 4 5* para jugar tu mano.`;
+
+                        await sock.sendMessage(from, { text: discardText }, { quoted: msg });
+                        break;
+                    }
+
+                    // 6. TIENDA (SHOP)
+                    if (subCmd === 'shop' || subCmd === 'tienda') {
+                        if (!game) {
+                            await sock.sendMessage(from, { text: `❌ No tienes una partida activa. Inicia una con *${p}balatro*.` }, { quoted: msg });
+                            break;
+                        }
+                        if (game.state !== 'shop') {
+                            await sock.sendMessage(from, { text: `⚠️ No estás en la tienda. La tienda se abre tras derrotar una Ciega.` }, { quoted: msg });
+                            break;
+                        }
+                        await sock.sendMessage(from, { text: renderBalatroShop(game, p) }, { quoted: msg });
+                        break;
+                    }
+
+                    // 7. COMPRAR EN TIENDA (BUY)
+                    if (subCmd === 'comprar' || subCmd === 'buy') {
+                        if (!game || game.state !== 'shop') {
+                            await sock.sendMessage(from, { text: `❌ Solo puedes comprar cuando estés en la Tienda tras superar una Ciega.` }, { quoted: msg });
+                            break;
+                        }
+
+                        const choice = parseInt(subArgs.trim(), 10);
+                        if (isNaN(choice) || choice < 1 || choice > game.shopOffers.length) {
+                            await sock.sendMessage(from, { text: `❌ Elige un número válido del 1 al ${game.shopOffers.length}.\n_Ejemplo: *${p}balatro comprar 1*_` }, { quoted: msg });
+                            break;
+                        }
+
+                        const item = game.shopOffers[choice - 1];
+                        if (game.money < item.cost) {
+                            await sock.sendMessage(from, { text: `❌ No tienes suficiente dinero. Necesitas *$${item.cost}* y tienes *$${game.money}*.` }, { quoted: msg });
+                            break;
+                        }
+
+                        if (item.shopType === 'joker') {
+                            if (game.jokers.length >= 5) {
+                                await sock.sendMessage(from, { text: `❌ Límite de Jokers alcanzado (5/5). Vende o descarta para tener espacio.` }, { quoted: msg });
+                                break;
+                            }
+                            game.money -= item.cost;
+                            game.jokers.push({ ...item });
+                            game.shopOffers.splice(choice - 1, 1);
+
+                            await sock.sendMessage(from, { 
+                                text: `✅ ¡Compraste el Joker 🃏 *${item.name}* por *$${item.cost}*!\n_${item.desc}_\n\n${renderBalatroShop(game, p)}` 
+                            }, { quoted: msg });
+                        } else if (item.shopType === 'planet') {
+                            game.money -= item.cost;
+                            const hLvl = game.handLevels[item.hand];
+                            if (hLvl) {
+                                hLvl.level++;
+                                hLvl.chips += item.chips;
+                                hLvl.mult += item.mult;
+                            }
+                            game.shopOffers.splice(choice - 1, 1);
+
+                            await sock.sendMessage(from, { 
+                                text: `🪐 *${item.name} USADO:* ¡La mano *${item.hand}* subió a Nivel ${hLvl.level}! (+${item.chips} Fichas, +${item.mult} Mult)\n\n${renderBalatroShop(game, p)}` 
+                            }, { quoted: msg });
+                        }
+                        break;
+                    }
+
+                    // 8. REROLL TIENDA
+                    if (subCmd === 'reroll') {
+                        if (!game || game.state !== 'shop') {
+                            await sock.sendMessage(from, { text: `❌ Solo puedes renovar la tienda mientras estés en ella.` }, { quoted: msg });
+                            break;
+                        }
+                        if (game.money < 5) {
+                            await sock.sendMessage(from, { text: `❌ Necesitas *$5* para renovar la tienda. Tienes *$${game.money}*.` }, { quoted: msg });
+                            break;
+                        }
+                        game.money -= 5;
+                        generateBalatroShop(game);
+                        await sock.sendMessage(from, { text: `🎲 *Tienda renovada por $5.*\n\n${renderBalatroShop(game, p)}` }, { quoted: msg });
+                        break;
+                    }
+
+                    // 9. NEXT / SIGUIENTE CIEGA
+                    if (subCmd === 'next' || subCmd === 'siguiente' || subCmd === 'continuar') {
+                        if (!game) {
+                            await sock.sendMessage(from, { text: `❌ No tienes una partida activa. Inicia una con *${p}balatro*.` }, { quoted: msg });
+                            break;
+                        }
+                        if (game.state !== 'shop') {
+                            await sock.sendMessage(from, { text: `⚠️ Ya estás jugando una ronda activa.` }, { quoted: msg });
+                            break;
+                        }
+
+                        // Prepare next round
+                        game.state = 'playing';
+                        game.deck = createBalatroDeck();
+                        game.hand = game.deck.splice(0, 8);
+                        game.handsLeft = 4;
+                        game.discardsLeft = 3;
+
+                        // Apply boss handicap
+                        if (game.blindIndex === 2 && game.bossModifier) {
+                            if (game.bossModifier.zeroDiscards) game.discardsLeft = 0;
+                            if (game.bossModifier.oneHand) game.handsLeft = 1;
+                        }
+
+                        await sock.sendMessage(from, { 
+                            text: `🚀 *¡ENTRANDO A ${getBlindName(game.blindIndex).toUpperCase()} (ANTE ${game.ante})!* 🚀\n\n${renderBalatroState(game, p)}` 
+                        }, { quoted: msg });
+                        break;
+                    }
+
+                    // Subcomando no reconocido
+                    await sock.sendMessage(from, { 
+                        text: `❌ Subcomando de Balatro no reconocido.\n\nUsa *${p}balatro* para ver tu partida o *${p}balatro info* para ver la guía y comandos.` 
+                    }, { quoted: msg });
+                    break;
+                }
+
                 case 'ruletaexpulsion': {
                     const chamber = Math.floor(Math.random() * 6) + 1;
                     if (chamber === 1) {
@@ -5649,7 +6484,6 @@ _Datos meteorológicos en tiempo real._`;
                     }
                     break;
                 }
-
 
                 default: {
                     const allAvailable = Array.from(new Set([
