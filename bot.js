@@ -2066,7 +2066,7 @@ async function connectToWhatsApp() {
                     const eventNotice = activeEvent && Date.now() < activeEvent.endsAt
                         ? `\n\n${activeEvent.emoji} *EVENTO ACTIVO:* ${activeEvent.label} — ${activeEvent.description}\nTermina en: ${Math.ceil((activeEvent.endsAt - Date.now()) / 60000)} min` : '';
                     const menu =
-`🦉 *DUbot* — _v1.3.1 Official_${eventNotice}
+`🦉 *DUbot* — _v1.4.0 Official_${eventNotice}
 
 💰 *ECONOMÍA & BANCO* (.w, .d, .wk, .m, .b)
 *${currentPrefix}work* — Trabajar (.w)
@@ -2211,6 +2211,12 @@ async function connectToWhatsApp() {
                 case 'changelog': {
                     const clText =
 `📜 *HISTORIAL DE CAMBIOS — DUBOT* 🦉
+
+🚀 *v1.4.0 (Transmisión Global Oculta & Eventos Multigrupo)*
+• 📢 Transmisión Global Invisible (.globalmsg / .gmsg / .globalhidetag): Nuevo comando de difusión masiva que envía comunicados con mención invisible/oculta a todos los grupos donde se ha usado el bot alguna vez.
+• 🌟 Eventos Globales Automatizados: Al iniciar (.event) o finalizar (.endevent) un evento, el anuncio se transmite automáticamente con mención invisible a todos los grupos registrados.
+• ⏱️ Duración Flexible en Minutos u Horas: Ahora puedes elegir la duración exacta de los eventos especificando minutos (.event luck 30m, 45min, 15 minutos) u horas (.event luck 2h, 1 hora).
+• 🗂️ Registro Inteligente de Grupos (_usedGroups): Mapeo persistente y automático de cada grupo que interactúa con el bot, con protección anti-rate limit de 1.5s entre envíos.
 
 🚀 *v1.3.1 (Balatro ASCII Poker Roguelike & Prefijos Libres Jadibot)*
 • 🃏 Balatro Roguelike Poker en ASCII: Minijuego completo de Balatro con interfaz ASCII adaptada a móviles (4 cartas por fila sin desbordes). Incluye 30 Jokers (+Fichas, +Mult, ×Mult), 9 Cartas de Planetas para subir de nivel las manos, 8 ANTES con Small/Big/Boss Blinds y Tienda entre rondas (.balatro, .bltr, .bplay, .bdiscard, .bshop, .bnext, .binfo).

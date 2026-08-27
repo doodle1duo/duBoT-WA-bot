@@ -9,13 +9,13 @@
 <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-v18+-68a063?style=for-the-badge&logo=node.js&logoColor=white" alt="NodeJS"/></a>
 <a href="https://github.com/WhiskeySockets/Baileys"><img src="https://img.shields.io/badge/Baileys-@whiskeysockets-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Baileys"/></a>
 <a href="https://ai.google.dev/"><img src="https://img.shields.io/badge/Google_Gemini-IA_Core-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Gemini"/></a>
-<a href="https://github.com/"><img src="https://img.shields.io/badge/Version-1.3.1-orange?style=for-the-badge" alt="Version"/></a>
+<a href="https://github.com/"><img src="https://img.shields.io/badge/Version-1.4.0-orange?style=for-the-badge" alt="Version"/></a>
 
 <a href="https://github.com/"><img src="https://img.shields.io/badge/Platform-Termux_|_Linux_|_Windows-blueviolet?style=for-the-badge" alt="Platform"/></a>
 
 <p align="center">
   <b>El bot para WhatsApp más completo, modular y optimizado en Node.js (Baileys ESM).<br>
-  Equipado con Sub-Bots Jadibots ilimitados, Balatro Roguelike Poker ASCII, IA Gemini, Duelos PvP, Gestión de Grupos, Notas de Voz TTS, Casino, Economía Bancaria, Gacha RPG Patapon, Clima Satelital y Salas de Inter-Chat Virtual.</b>
+  Equipado con Sub-Bots Jadibots ilimitados, Transmisión Global Oculta, Balatro Roguelike Poker ASCII, IA Gemini, Duelos PvP, Gestión de Grupos, Notas de Voz TTS, Casino, Economía Bancaria, Gacha RPG Patapon, Clima Satelital y Salas de Inter-Chat Virtual.</b>
 </p>
 
 <p align="center">
@@ -47,7 +47,13 @@
 
 ## 🌟 Características Destacadas
 
-### 🃏 1. Balatro Roguelike Poker en ASCII (v1.3.1)
+### 📢 1. Transmisión Global Oculta & Eventos Multigrupo (v1.4.0)
+* **Difusión Global Invisible (`.globalmsg [mensaje]`):** Envía comunicados oficiales a todos los grupos registrados donde el bot ha interactuado, con mención invisible/oculta a todos sus miembros.
+* **Eventos con Transmisión Automática (`.event` / `.endevent`):** Al activar o finalizar un evento global, todos los grupos reciben el anuncio con etiqueta oculta.
+* **Duración en Minutos u Horas:** Especifica tiempos flexibles como `.event luck 30m`, `.event work 45min` o `.event casino 2h`.
+* **Registro Persistente:** Mapeo automático de grupos en base de datos con intervalo anti-ban de 1.5s entre envíos.
+
+### 🃏 2. Balatro Roguelike Poker en ASCII (v1.3.1)
 * Adaptación completa del roguelike de póker **Balatro** con visualización ASCII compacta optimizada para pantallas móviles.
 * **30 Jokers únicos:** Multiplicadores aditivos, multiplicadores exponenciales ($\times\text{Mult}$), fichas planas y Jokers de escala.
 * **9 Cartas de Planeta:** Sube de nivel las combinaciones de póker (Pareja, Doble Pareja, Trío, Escalera, Color, Full House, Póker, Escalera de Color, Escalera Real).
