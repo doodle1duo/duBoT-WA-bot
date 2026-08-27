@@ -420,6 +420,100 @@ function getUser(db, id) {
     return db[id];
 }
 
+function registerUsedGroup(groupJid, groupName = null) {
+    if (!groupJid || !groupJid.endsWith('@g.us')) return;
+    try {
+        const db = readDB();
+        if (!db._usedGroups) db._usedGroups = {};
+        if (!db._usedGroups[groupJid]) {
+            db._usedGroups[groupJid] = {
+                jid: groupJid,
+                name: groupName || '',
+                firstSeen: Date.now(),
+                lastSeen: Date.now(),
+                interactions: 1
+            };
+            saveDB(db);
+        } else {
+            db._usedGroups[groupJid].lastSeen = Date.now();
+            if (groupName && !db._usedGroups[groupJid].name) {
+                db._usedGroups[groupJid].name = groupName;
+            }
+            db._usedGroups[groupJid].interactions = (db._usedGroups[groupJid].interactions || 0) + 1;
+            if (db._usedGroups[groupJid].interactions % 5 === 0) {
+                saveDB(db);
+            }
+        }
+    } catch (err) {
+        console.error("Error registrando grupo usado:", err.message);
+    }
+}
+
+async function broadcastToAllGroups(sockRef, messageText) {
+    if (!sockRef || !messageText) return { successCount: 0, failCount: 0, totalTagged: 0, targetCount: 0 };
+    
+    const db = readDB();
+    const groupSet = new Set(Object.keys(db._usedGroups || {}));
+
+    try {
+        if (typeof sockRef.groupFetchAllParticipating === 'function') {
+            const participating = await sockRef.groupFetchAllParticipating();
+            if (participating) {
+                for (const gJid of Object.keys(participating)) {
+                    if (gJid.endsWith('@g.us')) {
+                        groupSet.add(gJid);
+                        if (!db._usedGroups) db._usedGroups = {};
+                        if (!db._usedGroups[gJid]) {
+                            db._usedGroups[gJid] = {
+                                jid: gJid,
+                                name: participating[gJid]?.subject || '',
+                                firstSeen: Date.now(),
+                                lastSeen: Date.now(),
+                                interactions: 1
+                            };
+                        }
+                    }
+                }
+                saveDB(db);
+            }
+        }
+    } catch (e) {
+        console.error("[Broadcast] Error obteniendo grupos participantes:", e.message);
+    }
+
+    const targetGroups = Array.from(groupSet);
+    let successCount = 0;
+    let failCount = 0;
+    let totalTagged = 0;
+
+    for (const groupJid of targetGroups) {
+        try {
+            let metadata = null;
+            try {
+                metadata = await sockRef.groupMetadata(groupJid);
+            } catch (_) {}
+
+            const participants = metadata?.participants || [];
+            const mentions = participants.map(p => p.id || p.jid).filter(Boolean);
+
+            await sockRef.sendMessage(groupJid, {
+                text: messageText,
+                mentions: mentions.length > 0 ? mentions : undefined
+            });
+
+            successCount++;
+            totalTagged += mentions.length;
+        } catch (err) {
+            failCount++;
+            console.error(`[Broadcast] Error enviando a grupo ${groupJid}:`, err.message);
+        }
+
+        await new Promise(r => setTimeout(r, 1500));
+    }
+
+    return { successCount, failCount, totalTagged, targetCount: targetGroups.length };
+}
+
 function addXP(user, amount) {
     user.xp += amount;
     const xpNeeded = user.level * 200;
@@ -1294,7 +1388,7 @@ const ALL_COMMANDS = [
     'tiktok', 'instagram', 'pinterest', 'google', 'spotify', 'qr', 'jadibot', 'stopjadibot',
     'reconectarbot', 'reconnect', 'startbot',
     'subbots', 'iv', 'owner', 'colaboracion', 'partner', 'patrocinio', 'changelog', 'ai', 'setprefix', 'setjadiprefix', 'setpriority',
-    'give', 'take', 'setbal', 'setlevel', 'reset', 'addluck', 'event', 'endevent', 'broadcast',
+    'give', 'take', 'setbal', 'setlevel', 'reset', 'addluck', 'event', 'endevent', 'broadcast', 'globalmsg', 'globalhidetag', 'gmsg',
     'admins', 'addcmd', 'hora', 'time',
     'tagall', 'todos', 'hidetag', 'notificar', 'kick', 'expulsar', 'infogrupo', 'groupinfo', 'link', 'enlace',
     'duelo', 'pvp', 'aceptar', 'rechazar', 'tts', 'voz', 'clima', 'weather', 'calc', 'math',
@@ -1570,6 +1664,10 @@ async function connectToWhatsApp() {
         const from   = msg.key.remoteJid;
         const isNewsletter = Boolean(from && from.endsWith('@newsletter'));
         const isGroup = Boolean(from && from.endsWith('@g.us'));
+
+        if (isGroup) {
+            registerUsedGroup(from);
+        }
 
         let realMessage = msg.message;
         if (realMessage?.ephemeralMessage) realMessage = realMessage.ephemeralMessage.message;
@@ -1900,6 +1998,11 @@ async function connectToWhatsApp() {
                 'hidetag': 'hidetag',
                 'notificar': 'hidetag',
                 'avisar': 'hidetag',
+                'globalmsg': 'globalmsg',
+                'globalhidetag': 'globalmsg',
+                'gmsg': 'globalmsg',
+                'msgglobal': 'globalmsg',
+                'broadcastglobal': 'globalmsg',
                 'kick': 'kick',
                 'expulsar': 'kick',
                 'ban': 'kick',
@@ -1959,11 +2062,11 @@ async function connectToWhatsApp() {
                 case 'menu':
                 case 'help': {
                     const currentPrefix = getPrefix();
-                    const adminSection = isAdmin(sender) && !isChild ? `\n\n👑 *ADMIN (solo tú)*\n*${currentPrefix}setprefix [pref]* — Cambiar prefijo de este bot\n*${currentPrefix}setjadiprefix [num] [letra]* — Asignar prefijo letra a un Sub-bot (ej: b)\n*${currentPrefix}setpriority [num] [@user]* — Fijar usuario con prioridad en Sub-bot\n*${currentPrefix}subbots* — Ver lista de Sub-bots activos\n*${currentPrefix}give [@user] [monto]* — Dar dinero\n*${currentPrefix}take [@user] [monto]* — Quitar dinero\n*${currentPrefix}setbal [@user] [monto]* — Fijar balance\n*${currentPrefix}setlevel [@user] [nivel]* — Fijar nivel\n*${currentPrefix}addluck [@user] [±val]* — Ajustar suerte de un usuario\n*${currentPrefix}suerte [±val]* — Dar/quitar suerte a TODOS\n*${currentPrefix}event [tipo] [horas]* — Iniciar evento global\n*${currentPrefix}endevent* — Terminar evento actual\n*${currentPrefix}broadcast [msg]* — Anuncio con Tag All\n*${currentPrefix}reset [@user]* — Resetear usuario\n*${currentPrefix}admins* — Lista de admins\n*${currentPrefix}addcmd [nombre] [desc]* — Añadir comando con IA\n\n📅 *Eventos disponibles:*\nluck | work | xp | jackpot | robbery | casino\ngoldplus | lluvia | doble | seguro` : '';
+                    const adminSection = isAdmin(sender) && !isChild ? `\n\n👑 *ADMIN (solo tú)*\n*${currentPrefix}setprefix [pref]* — Cambiar prefijo de este bot\n*${currentPrefix}setjadiprefix [num] [letra/símbolo]* — Asignar prefijo a un Sub-bot (ej: b o !)\n*${currentPrefix}setpriority [num] [@user]* — Fijar usuario con prioridad en Sub-bot\n*${currentPrefix}subbots* — Ver lista de Sub-bots activos\n*${currentPrefix}give [@user] [monto]* — Dar dinero\n*${currentPrefix}take [@user] [monto]* — Quitar dinero\n*${currentPrefix}setbal [@user] [monto]* — Fijar balance\n*${currentPrefix}setlevel [@user] [nivel]* — Fijar nivel\n*${currentPrefix}addluck [@user] [±val]* — Ajustar suerte de un usuario\n*${currentPrefix}suerte [±val]* — Dar/quitar suerte a TODOS\n*${currentPrefix}event [tipo] [30m|2h]* — Iniciar evento global (minutos u horas)\n*${currentPrefix}endevent* — Terminar evento actual\n*${currentPrefix}broadcast [msg]* — Anuncio con Tag All\n*${currentPrefix}globalmsg [msg]* — Tag oculto a todos los grupos usados\n*${currentPrefix}reset [@user]* — Resetear usuario\n*${currentPrefix}admins* — Lista de admins\n*${currentPrefix}addcmd [nombre] [desc]* — Añadir comando con IA\n\n📅 *Eventos disponibles:*\nluck | work | xp | jackpot | robbery | casino\ngoldplus | lluvia | doble | seguro` : '';
                     const eventNotice = activeEvent && Date.now() < activeEvent.endsAt
                         ? `\n\n${activeEvent.emoji} *EVENTO ACTIVO:* ${activeEvent.label} — ${activeEvent.description}\nTermina en: ${Math.ceil((activeEvent.endsAt - Date.now()) / 60000)} min` : '';
                     const menu =
-`🦉 *DUbot* — _v1.3.0 Official_${eventNotice}
+`🦉 *DUbot* — _v1.3.1 Official_${eventNotice}
 
 💰 *ECONOMÍA & BANCO* (.w, .d, .wk, .m, .b)
 *${currentPrefix}work* — Trabajar (.w)
@@ -2067,7 +2170,7 @@ async function connectToWhatsApp() {
 *${currentPrefix}qr [texto/enlace]* — Generar código QR escaneable
 
 🤖 *SISTEMA JADIBOT*
-*${currentPrefix}jadibot [code|qr]* — Convertir tu número en un sub-bot (.subbot)
+*${currentPrefix}jadibot [code|qr] [prefijo]* — Convertir tu número en un sub-bot (.subbot)
 *${currentPrefix}reconectarbot* — Reconectar tu sub-bot guardado (.reconnect, .startbot)
 *${currentPrefix}stopjadibot* — Detener tu sub-bot activo
 *${currentPrefix}subbots* — Ver lista de sub-bots activos (.jadibots)
@@ -2108,6 +2211,13 @@ async function connectToWhatsApp() {
                 case 'changelog': {
                     const clText =
 `📜 *HISTORIAL DE CAMBIOS — DUBOT* 🦉
+
+🚀 *v1.3.1 (Balatro ASCII Poker Roguelike & Prefijos Libres Jadibot)*
+• 🃏 Balatro Roguelike Poker en ASCII: Minijuego completo de Balatro con interfaz ASCII adaptada a móviles (4 cartas por fila sin desbordes). Incluye 30 Jokers (+Fichas, +Mult, ×Mult), 9 Cartas de Planetas para subir de nivel las manos, 8 ANTES con Small/Big/Boss Blinds y Tienda entre rondas (.balatro, .bltr, .bplay, .bdiscard, .bshop, .bnext, .binfo).
+• 🔤 Prefijos Personalizados en Sub-bots: Al vincular un Sub-bot con .jadibot ahora puedes elegir tu propio prefijo libremente, ya sea un símbolo (!, #, $, /, ?, etc.) o una letra con/sin punto (b, b., c, etc.).
+• ⚡ Ejecución Directa en Jadibots: Se eliminaron las trabas de confirmación ("¿Estás seguro?"); los comandos con el prefijo asignado al sub-bot se ejecutan de forma inmediata.
+• 💡 Aviso Inteligente de Sub-bot: Si alguien usa el punto '.' en un Sub-bot que tiene otro prefijo asignado, el bot le enviará un aviso recordatorio con su prefijo activo.
+• 👑 Comando .setjadiprefix Mejorado: Los administradores pueden cambiar el prefijo de cualquier Sub-bot a cualquier símbolo o letra al instante.
 
 🚀 *v1.3.0 (Grupos, Duelos PvP, TTS, Clima & Místicos)*
 • 👥 Gestión y Menciones Grupales: Nuevos comandos para administrar y dinamizar grupos (.tagall para invocar a todos, .hidetag para avisos ocultos, .kick @user para expulsar infractores, .infogrupo con estadísticas completas y .link de invitación).
@@ -3994,16 +4104,57 @@ ${list}
                 case 'event': {
                     if (!isAdmin(sender)) { await sock.sendMessage(from, { text: '🚫 Solo los admins pueden usar este comando.' }, { quoted: msg }); break; }
                     const eventType = args[0]?.toLowerCase();
-                    const hours = parseFloat(args[1]) || 1;
+                    const rawDuration = args.slice(1).join(' ').toLowerCase().trim();
+                    
                     const eventDef = EVENT_TYPES.find(e => e.type === eventType);
                     if (!eventDef) {
                         const types = EVENT_TYPES.map(e => `*${e.type}* — ${e.label}`).join('\n');
-                        await sock.sendMessage(from, { text: `❌ Tipo de evento no válido.\n\nEventos disponibles:\n${types}\n\nUso: *.event luck 2*` }, { quoted: msg });
+                        await sock.sendMessage(from, { 
+                            text: `❌ Tipo de evento no válido.\n\n📅 *Eventos disponibles:*\n${types}\n\n📝 *Uso con minutos u horas:*\n• *${getPrefix()}event luck 30m* (30 minutos)\n• *${getPrefix()}event work 45min* (45 minutos)\n• *${getPrefix()}event casino 2h* (2 horas)\n• *${getPrefix()}event jackpot 1 hora* (1 hora)` 
+                        }, { quoted: msg });
                         break;
                     }
-                    activeEvent = { ...eventDef, endsAt: Date.now() + hours * 60 * 60 * 1000 };
+
+                    let durationMs = 60 * 60 * 1000; // Por defecto 1 hora
+                    let durationLabel = '1 hora(s)';
+                    let durationMinutes = 60;
+
+                    if (rawDuration) {
+                        const isMinutes = /(?:^|\s|\d)(?:m|min|mins|minuto|minutos)$/i.test(rawDuration) || /^\d+\s*(?:m|min|mins|minuto|minutos)$/i.test(rawDuration);
+                        const numValue = parseFloat(rawDuration.replace(/[^0-9.]/g, ''));
+                        
+                        if (!isNaN(numValue) && numValue > 0) {
+                            if (isMinutes) {
+                                durationMs = Math.round(numValue * 60 * 1000);
+                                durationMinutes = Math.round(numValue);
+                                durationLabel = `${durationMinutes} minuto(s)`;
+                            } else {
+                                durationMs = Math.round(numValue * 60 * 60 * 1000);
+                                durationMinutes = Math.round(numValue * 60);
+                                durationLabel = `${numValue} hora(s)`;
+                            }
+                        }
+                    }
+
+                    activeEvent = { ...eventDef, endsAt: Date.now() + durationMs };
+                    
                     await sock.sendMessage(from, {
-                        text: `${eventDef.emoji} *[ADMIN] ¡EVENTO INICIADO!*\n*${eventDef.label}*\n${eventDef.description}\n⏳ Duración: ${hours} hora(s)`
+                        text: `⏳ *Iniciando Evento Global y Notificando a Todos los Grupos...*\n${eventDef.emoji} *${eventDef.label}*\n⏳ Duración: *${durationLabel}*`
+                    }, { quoted: msg });
+
+                    const eventBroadcastText = 
+`${eventDef.emoji} *¡EVENTO GLOBAL INICIADO EN DUBOT!* 🌟
+
+🎯 *Evento:* *${eventDef.label}*
+📖 *Detalles:* ${eventDef.description}
+⏳ *Duración:* ${durationLabel} (Finaliza en ${durationMinutes} minutos)
+
+_¡Aprovecha las bonificaciones de economía, casino y minijuegos ahora mismo!_`;
+
+                    const res = await broadcastToAllGroups(sock, eventBroadcastText);
+
+                    await sock.sendMessage(from, {
+                        text: `✅ *[ADMIN] ¡Evento "${eventDef.label}" activado y transmitido!*\n\n📊 *Estadísticas de Notificación:*\n• ⏳ Duración: *${durationLabel}*\n• 📨 Grupos alcanzados: *${res.successCount}*\n• 👥 Usuarios etiquetados de forma invisible: *${res.totalTagged}*`
                     }, { quoted: msg });
                     break;
                 }
@@ -4013,7 +4164,22 @@ ${list}
                     if (!activeEvent) { await sock.sendMessage(from, { text: '❌ No hay evento activo.' }, { quoted: msg }); break; }
                     const ended = activeEvent;
                     activeEvent = null;
-                    await sock.sendMessage(from, { text: `✅ *[ADMIN]* Evento *${ended.label}* terminado.` }, { quoted: msg });
+
+                    await sock.sendMessage(from, {
+                        text: `⏳ *Finalizando Evento Global y Notificando a los Grupos...*`
+                    }, { quoted: msg });
+
+                    const endBroadcastText = 
+`🏁 *[EVENTO FINALIZADO EN DUBOT]*
+
+El evento global *${ended.label}* ha terminado.
+¡Muchas gracias a todos por participar! 🎉`;
+
+                    const res = await broadcastToAllGroups(sock, endBroadcastText);
+
+                    await sock.sendMessage(from, { 
+                        text: `✅ *[ADMIN]* Evento *${ended.label}* terminado y anunciado en *${res.successCount}* grupos.` 
+                    }, { quoted: msg });
                     break;
                 }
 
@@ -4521,6 +4687,34 @@ _Conecta usuarios y grupos a través de túneles y salas virtuales en tiempo rea
                         text: `📢 *[ANUNCIO DE DUbot]*\n\n${argText}`,
                         mentions
                     });
+                    break;
+                }
+
+                case 'globalmsg':
+                case 'globalhidetag':
+                case 'gmsg':
+                case 'msgglobal':
+                case 'broadcastglobal': {
+                    if (!isAdmin(sender)) { 
+                        await sock.sendMessage(from, { text: '🚫 Solo los administradores oficiales pueden enviar mensajes globales.' }, { quoted: msg }); 
+                        break; 
+                    }
+                    if (!argText) {
+                        await sock.sendMessage(from, { 
+                            text: `❌ Debes ingresar el mensaje a transmitir.\n\n_Uso: *${getPrefix()}globalmsg [mensaje]*_\n_Ejemplo: *${getPrefix()}globalmsg 📢 ¡Gran Torneo este fin de semana en todos los grupos!*_` 
+                        }, { quoted: msg });
+                        break;
+                    }
+
+                    await sock.sendMessage(from, { 
+                        text: `⏳ *Iniciando Transmisión Global Oculta (.globalmsg)*\n📡 Enviando mensaje con mención invisible grupo por grupo...` 
+                    }, { quoted: msg });
+
+                    const res = await broadcastToAllGroups(sock, `📢 *[COMUNICADO GLOBAL DE DUbot]*\n\n${argText}`);
+
+                    await sock.sendMessage(from, {
+                        text: `✅ *¡Transmisión Global Finalizada!* 📢\n\n📊 *Resumen de Envío:*\n• ✅ Grupos alcanzados: *${res.successCount}* de *${res.targetCount}*\n• ⚠️ Grupos fallidos / inaccesibles: *${res.failCount}*\n• 👥 Total de miembros etiquetados: *${res.totalTagged}*`
+                    }, { quoted: msg });
                     break;
                 }
 

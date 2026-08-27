@@ -9,13 +9,13 @@
 <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-v18+-68a063?style=for-the-badge&logo=node.js&logoColor=white" alt="NodeJS"/></a>
 <a href="https://github.com/WhiskeySockets/Baileys"><img src="https://img.shields.io/badge/Baileys-@whiskeysockets-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Baileys"/></a>
 <a href="https://ai.google.dev/"><img src="https://img.shields.io/badge/Google_Gemini-IA_Core-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Gemini"/></a>
-<a href="https://github.com/"><img src="https://img.shields.io/badge/Version-1.3.0-orange?style=for-the-badge" alt="Version"/></a>
+<a href="https://github.com/"><img src="https://img.shields.io/badge/Version-1.3.1-orange?style=for-the-badge" alt="Version"/></a>
 
 <a href="https://github.com/"><img src="https://img.shields.io/badge/Platform-Termux_|_Linux_|_Windows-blueviolet?style=for-the-badge" alt="Platform"/></a>
 
 <p align="center">
   <b>El bot para WhatsApp más completo, modular y optimizado en Node.js (Baileys ESM).<br>
-  Equipado con Sub-Bots Jadibots ilimitados, IA Gemini, Duelos PvP, Gestión de Grupos, Notas de Voz TTS, Casino, Economía Bancaria, Gacha RPG Patapon, Clima Satelital y Salas de Inter-Chat Virtual.</b>
+  Equipado con Sub-Bots Jadibots ilimitados, Balatro Roguelike Poker ASCII, IA Gemini, Duelos PvP, Gestión de Grupos, Notas de Voz TTS, Casino, Economía Bancaria, Gacha RPG Patapon, Clima Satelital y Salas de Inter-Chat Virtual.</b>
 </p>
 
 <p align="center">
@@ -47,12 +47,21 @@
 
 ## 🌟 Características Destacadas
 
-### 🤖 1. Sistema Jadibot (Sub-Bots Independientes Multisesión)
+### 🃏 1. Balatro Roguelike Poker en ASCII (v1.3.1)
+* Adaptación completa del roguelike de póker **Balatro** con visualización ASCII compacta optimizada para pantallas móviles.
+* **30 Jokers únicos:** Multiplicadores aditivos, multiplicadores exponenciales ($\times\text{Mult}$), fichas planas y Jokers de escala.
+* **9 Cartas de Planeta:** Sube de nivel las combinaciones de póker (Pareja, Doble Pareja, Trío, Escalera, Color, Full House, Póker, Escalera de Color, Escalera Real).
+* **8 ANTES con 3 Ciegas cada uno:** Small Blind, Big Blind y Boss Blinds con efectos de debuff especiales.
+* **Tienda interactiva entre rondas:** Compra y vende Jokers, Planetas y realiza rerolls de tienda.
+* Comandos: `.balatro`, `.bltr`, `.bplay`, `.bdiscard`, `.bshop`, `.bnext`, `.binfo`.
+
+### 🤖 2. Sistema Jadibot Multisesión con Prefijos Libres (v1.3.1)
 * Convierte cualquier número de WhatsApp en un **sub-bot activo e independiente** en segundos.
 * Vinculación rápida mediante **código de 8 dígitos** o escaneo de **código QR**.
-* Asignación automática o personalizada de prefijo por sub-bot (`b.`, `!`, `#`, `$`, etc.).
-* **Auto-Reconexión inteligente:** Si el servidor se reinicia, todos los sub-bots vinculados se restauran automáticamente sin intervención manual.
-* **Ejecución directa:** Los comandos con el prefijo del sub-bot se ejecutan directamente sin trabas.
+* **Prefijos totalmente personalizados:** Asigna letras (`b.`, `c.`) o símbolos (`!`, `#`, `$`, `/`, `?`, etc.) al momento de vincular.
+* **Ejecución directa instantánea:** Sin confirmaciones molestas al usar el prefijo asignado.
+* **Aviso inteligente de prefijo:** Si alguien usa `.` en un sub-bot con prefijo propio, recibe una notificación con su prefijo correcto.
+* **Auto-Reconexión inteligente:** Si el servidor se reinicia, todos los sub-bots vinculados se restauran automáticamente.
 
 ### 🛡️ 2. Administración y Moderación de Grupos (v1.3.0)
 * **Invocación Masiva (`.tagall`):** Menciona a todos los miembros del grupo con formato visual elegante.
@@ -397,13 +406,14 @@ const BOT_ADMINS = new Set([
 
 ### Comandos de Administrador (Solo Owners)
 * `.setprefix [prefijo]` — Cambiar el prefijo del bot principal en tiempo real.
-* `.setjadiprefix [num] [letra]` — Asignar un prefijo específico a un sub-bot (ej: `b`).
+* `.setjadiprefix [num] [letra/símbolo]` — Asignar un prefijo específico a un sub-bot (ej: `b` o `!`).
 * `.setpriority [num] [@user]` — Asignar usuario con prioridad a un sub-bot.
 * `.give @user [monto]` / `.take @user [monto]` — Dar o quitar dinero a un usuario.
 * `.setbal @user [monto]` / `.setlevel @user [nivel]` — Modificar balance o nivel.
 * `.addluck @user [±valor]` / `.suerte [±valor]` — Modificar suerte de un usuario o global.
-* `.event [tipo] [horas]` / `.endevent` — Iniciar o finalizar eventos globales de economía/casino.
-* `.broadcast [mensaje]` — Transmitir anuncio oficial a grupos y usuarios.
+* `.event [tipo] [duración (ej: 30m, 45min, 2h)]` / `.endevent` — Iniciar o finalizar eventos globales en minutos u horas con etiqueta oculta a todos los grupos.
+* `.broadcast [mensaje]` — Transmitir anuncio oficial en el chat actual con tag a todos.
+* `.globalmsg [mensaje]` — Transmisión global con etiqueta oculta a todos los grupos donde se ha usado el bot (`.gmsg`, `.globalhidetag`).
 
 ---
 
