@@ -50,9 +50,9 @@
 ### 🤖 1. Sistema Jadibot (Sub-Bots Independientes Multisesión)
 * Convierte cualquier número de WhatsApp en un **sub-bot activo e independiente** en segundos.
 * Vinculación rápida mediante **código de 8 dígitos** o escaneo de **código QR**.
-* Asignación automática de prefijo individual por sub-bot (`a.`, `b.`, `c.`, etc.).
+* Asignación automática o personalizada de prefijo por sub-bot (`b.`, `!`, `#`, `$`, etc.).
 * **Auto-Reconexión inteligente:** Si el servidor se reinicia, todos los sub-bots vinculados se restauran automáticamente sin intervención manual.
-* Sistema de **prioridad de usuario** y confirmación contra spam.
+* **Ejecución directa:** Los comandos con el prefijo del sub-bot se ejecutan directamente sin trabas.
 
 ### 🛡️ 2. Administración y Moderación de Grupos (v1.3.0)
 * **Invocación Masiva (`.tagall`):** Menciona a todos los miembros del grupo con formato visual elegante.

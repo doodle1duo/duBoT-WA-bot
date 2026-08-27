@@ -200,9 +200,21 @@ function getPriorityUser() {
     return s.priorityUser || process.env.JADI_PRIORITY || null;
 }
 
-// Seguimiento de confirmación para Jadibots ("¿Estás seguro?")
-const confirmedUsers = new Set();
-const pendingConfirms = new Map();
+function formatJadibotPrefix(raw) {
+    if (!raw) return null;
+    let clean = raw.trim();
+    if (!clean || /\s/.test(clean)) return null;
+    // Si es una sola letra o dígito (ej: 'b', '1') -> 'b.'
+    if (/^[a-zA-Z0-9]$/.test(clean)) return `${clean.toLowerCase()}.`;
+    // Si es letra con punto (ej: 'b.', 'z.') -> clean
+    if (/^[a-zA-Z0-9]\.$/.test(clean)) return clean.toLowerCase();
+    // Si es símbolo (ej: '!', '#', '$', '/', '?', '*', etc.) o prefijo corto de hasta 3 caracteres
+    if (clean.length <= 4 && clean !== '.') return clean;
+    return null;
+}
+
+// Cooldown de avisos de Sub-bot
+const subbotNoticeCooldown = new Map();
 
 // Escuchar mensajes IPC del proceso padre en sub-bots
 if (isChild && process.on) {
@@ -210,7 +222,7 @@ if (isChild && process.on) {
         if (!ipcMsg) return;
         if (ipcMsg.type === 'set_prefix') {
             const s = readSettings();
-            s.prefix = ipcMsg.prefix.endsWith('.') ? ipcMsg.prefix : `${ipcMsg.prefix}.`;
+            s.prefix = formatJadibotPrefix(ipcMsg.prefix) || ipcMsg.prefix;
             saveSettings(s);
             console.log(`[Jadibot ${process.env.JADI_ID}] Prefijo actualizado a: ${s.prefix}`);
         }
@@ -226,7 +238,7 @@ if (isChild && process.on) {
 // ==========================================
 // 🤖 ADMINISTRADOR CENTRAL DE SUB-BOTS (JADIBOTS)
 // ==========================================
-function startJadibotInstance(targetNumber, metodo = 'code', notifyFrom = null, priorityUser = null, isAutoRestart = false, currentSock = null) {
+function startJadibotInstance(targetNumber, metodo = 'code', notifyFrom = null, priorityUser = null, isAutoRestart = false, currentSock = null, requestedPrefix = null) {
     if (activeJadibots.has(targetNumber)) {
         return { success: false, reason: 'already_running' };
     }
@@ -239,7 +251,7 @@ function startJadibotInstance(targetNumber, metodo = 'code', notifyFrom = null, 
         try { existingSettings = JSON.parse(fs.readFileSync(specificSettingsPath)); } catch(e) {}
     }
 
-    let assignedPrefix = existingSettings?.prefix;
+    let assignedPrefix = requestedPrefix || existingSettings?.prefix;
     if (!assignedPrefix) {
         const usedLetters = new Set();
         for (const [num] of activeJadibots.entries()) {
@@ -1639,24 +1651,13 @@ async function connectToWhatsApp() {
         const priorityUser = getPriorityUser();
         const isPriorityUser = priorityUser && (sender === priorityUser || sender.split('@')[0] === priorityUser.split('@')[0]);
 
-        // Manejar respuestas directas de confirmación ("sí") para Jadibots
-        if (isChild && !fromMe && pendingConfirms.has(sender)) {
-            const cleanResp = textMessage.trim().toLowerCase();
-            if (['si', 'sí', 'yes', 's', 'ok', 'dale', 'confirmar', 'claro'].includes(cleanResp) || textMessage.includes('✅')) {
-                pendingConfirms.delete(sender);
-                confirmedUsers.add(sender);
-                await sock.sendMessage(from, { 
-                    text: `✅ *¡Confirmación Exitosa!*\nAhora puedes usar los comandos de este Sub-bot usando el prefijo *${botPrefix}* (ejemplo: *${botPrefix}menu*).` 
-                }, { quoted: msg });
-                return;
-            }
-        }
-
         // Detección de prefijo:
         // - En Bot Principal: acepta botPrefix (por defecto '.') o ';'
         // - En Jadibot:
-        //     * Acepta su prefijo específico (ej. 'a.', 'b.', etc.)
-        //     * Si es el usuario prioritario, TAMBIÉN acepta '.'
+        //     * Si el usuario usa su prefijo asignado (ej. 'b.', '!', '#', etc.): SE EJECUTA DIRECTAMENTE sin avisos.
+        //     * Si es el usuario prioritario (dueño del sub-bot): TAMBIÉN acepta '.' directamente.
+        //     * Si un usuario no prioritario usa '.' (ej. .menu, .work) en el sub-bot:
+        //       Se envía un aviso recordándole el prefijo asignado (con cooldown de 30s para evitar flood).
         let matchedPrefix = null;
         if (!isChild) {
             if (textMessage.startsWith(botPrefix)) matchedPrefix = botPrefix;
@@ -1666,6 +1667,19 @@ async function connectToWhatsApp() {
                 matchedPrefix = botPrefix;
             } else if (isPriorityUser && textMessage.startsWith('.')) {
                 matchedPrefix = '.';
+            } else if (textMessage.startsWith('.') && botPrefix !== '.') {
+                const potentialCmd = textMessage.slice(1).trim().split(' ')[0].toLowerCase();
+                const isKnownCmd = ALL_COMMANDS.includes(potentialCmd) || Boolean(aliases[potentialCmd]);
+                if (isKnownCmd && !fromMe) {
+                    const lastNotice = subbotNoticeCooldown.get(sender) || 0;
+                    if (Date.now() - lastNotice > 30000) {
+                        subbotNoticeCooldown.set(sender, Date.now());
+                        await sock.sendMessage(from, {
+                            text: `💡 *Aviso de Sub-bot:* El prefijo de este bot es *${botPrefix}*\nPara ejecutar comandos usa: *${botPrefix}${potentialCmd}* (ejemplo: *${botPrefix}menu*)`
+                        }, { quoted: msg });
+                    }
+                    return;
+                }
             }
         }
 
@@ -1674,35 +1688,6 @@ async function connectToWhatsApp() {
         const command = cmdBody.split(' ')[0].toLowerCase();
         const args = cmdBody.split(' ').slice(1);
         const argText = args.join(' ');
-
-        // Verificación de "¿Estás seguro?" para Jadibots si no respondió al bot
-        if (isCmd && isChild && !fromMe && !isPriorityUser) {
-            const quotedParticipant = realMessage?.extendedTextMessage?.contextInfo?.participant;
-            const botJid = sock.user?.id?.split(':')[0] + '@s.whatsapp.net';
-            const isReplyingToBot = quotedParticipant && (quotedParticipant.split('@')[0] === botJid.split('@')[0]);
-
-            if (!confirmedUsers.has(sender) && !isReplyingToBot) {
-                if (pendingConfirms.has(sender)) {
-                    const cleanResp = textMessage.trim().toLowerCase();
-                    const accepted = ['si', 'sí', 'yes', 's', 'ok', 'dale', 'confirmar', 'claro'].includes(cleanResp) || textMessage.includes('✅');
-                    pendingConfirms.delete(sender);
-                    if (accepted) {
-                        confirmedUsers.add(sender);
-                    } else {
-                        await sock.sendMessage(from, { 
-                            text: `❌ Debes confirmar respondiendo *sí* o citar un mensaje del bot para usar este Sub-bot.` 
-                        }, { quoted: msg });
-                        return;
-                    }
-                } else {
-                    pendingConfirms.set(sender, Date.now());
-                    await sock.sendMessage(from, {
-                        text: `⚠️ *¿Estás seguro?*\nEstás enviando un comando a este Sub-bot sin responder directamente a uno de sus mensajes.\n\nPara confirmar que deseas interactuar con este bot (*${botPrefix}*), responde a este mensaje con *sí* o *confirmar*.`
-                    }, { quoted: msg });
-                    return;
-                }
-            }
-        }
 
         if (isCmd) {
 
@@ -3645,38 +3630,43 @@ async function connectToWhatsApp() {
                 case 'jadibot':
                 case 'subbot':
                 case 'code': {
-                    let metodo = (args[0]?.toLowerCase() === 'qr') ? 'qr' : 'code';
-                    
-                    if (command === 'jadibot' || command === 'subbot') {
-                        if (args[0]?.toLowerCase() === 'qr' || args[0]?.toLowerCase() === 'code') {
-                            metodo = args[0].toLowerCase();
+                    let metodo = 'code';
+                    let customPrefix = null;
+                    let targetNumber = '';
+
+                    for (const arg of args) {
+                        const lower = arg.toLowerCase().trim();
+                        if (lower === 'qr' || lower === 'code') {
+                            metodo = lower;
+                            continue;
+                        }
+                        const digits = arg.replace(/[^0-9]/g, '');
+                        if (digits.length >= 8) {
+                            targetNumber = digits;
+                            continue;
+                        }
+                        const parsedPref = formatJadibotPrefix(arg);
+                        if (parsedPref && !customPrefix) {
+                            customPrefix = parsedPref;
                         }
                     }
 
-                    // 1. Intentamos sacar el número de los argumentos explícitos
-                    let targetNumber = args.join(' ').replace(/[^0-9]/g, '');
-
-                    // 2. Si no escribió nada, evaluamos el identificador del mensaje
+                    // 1. Si no escribió número en los argumentos, evaluar sender
                     if (!targetNumber || targetNumber.length < 7) {
                         if (sender.includes('@lid')) {
-                            // Intentamos resolver el LID usando el repositorio de Baileys
-                            const pnJid = await sock.signalRepository?.lidMapping?.getPNForLID(sender);
-                            
-                            if (pnJid) {
-                                targetNumber = pnJid.split('@')[0].split(':')[0];
-                            } else {
-                                await sock.sendMessage(from, { 
-                                    text: `❌ Tu número está oculto (@lid) y mi base de datos aún no lo reconoce.\nPor favor, escribe tu número manualmente.\nEjemplo: .${command} code 56912345678` 
-                                }, { quoted: msg });
-                                break; 
-                            }
+                            try {
+                                const pnJid = await sock.signalRepository?.lidMapping?.getPNForLID(sender);
+                                if (pnJid) targetNumber = pnJid.split('@')[0].split(':')[0];
+                            } catch (_) {}
                         } else {
                             targetNumber = sender.split('@')[0].split(':')[0];
                         }
                     }
                     
                     if (!targetNumber || targetNumber.length < 7) {
-                        await sock.sendMessage(from, { text: `❌ No se pudo detectar un número válido.` }, { quoted: msg });
+                        await sock.sendMessage(from, { 
+                            text: `❌ No se pudo detectar un número válido.\nPor favor indica tu número.\n_Ejemplo: *${getPrefix()}jadibot code 56912345678 !*_ o *${getPrefix()}jadibot code b.*_` 
+                        }, { quoted: msg });
                         break;
                     }
 
@@ -3690,12 +3680,12 @@ async function connectToWhatsApp() {
                         break;
                     }
 
-                    // Primer mensaje de confirmación
+                    const prefNotice = customPrefix ? `\n🔤 Prefijo configurado: *${customPrefix}*` : '';
                     await sock.sendMessage(from, { 
-                        text: `⏳ Iniciando instancia (${metodo.toUpperCase()}) para el número: ${targetNumber}...\nEspera un momento, enviaré los datos de acceso en el siguiente mensaje.`
+                        text: `⏳ Iniciando instancia (${metodo.toUpperCase()}) para el número: *${targetNumber}*...${prefNotice}\nEspera un momento, enviaré los datos de acceso en el siguiente mensaje.`
                     }, { quoted: msg });
 
-                    startJadibotInstance(targetNumber, metodo, from, sender, false, sock);
+                    startJadibotInstance(targetNumber, metodo, from, sender, false, sock, customPrefix);
                     break;
                 }
 
@@ -4091,16 +4081,15 @@ ${list}
                         break;
                     }
                     if (args.length < 2) {
-                        await sock.sendMessage(from, { text: `❌ Uso: *${getPrefix()}setjadiprefix [número] [letra]*\nEjemplo: *${getPrefix()}setjadiprefix 56912345678 b*` }, { quoted: msg });
+                        await sock.sendMessage(from, { text: `❌ Uso: *${getPrefix()}setjadiprefix [número] [letra/símbolo]*\nEjemplo: *${getPrefix()}setjadiprefix 56912345678 !* o *${getPrefix()}setjadiprefix 56912345678 b*` }, { quoted: msg });
                         break;
                     }
                     const targetNum = args[0].replace(/[^0-9]/g, '');
-                    let newLetter = args[1].trim().toLowerCase().replace(/[^a-z0-9]/gi, '');
-                    if (!targetNum || targetNum.length < 7 || !newLetter || newLetter.length > 2) {
-                        await sock.sendMessage(from, { text: '❌ Número o letra inválidos. Debe ser un número válido y una sola letra (ej: a, b, c).' }, { quoted: msg });
+                    const newPrefix = formatJadibotPrefix(args[1]);
+                    if (!targetNum || targetNum.length < 7 || !newPrefix) {
+                        await sock.sendMessage(from, { text: '❌ Número o prefijo inválido. Puedes usar una letra (ej: b, c, x.) o un símbolo (ej: !, #, $, /, ?).' }, { quoted: msg });
                         break;
                     }
-                    const newPrefix = `${newLetter}.`;
                     const targetSettingsPath = `./settings_jadibot_${targetNum}.json`;
                     let targetSettings = {};
                     if (fs.existsSync(targetSettingsPath)) {
