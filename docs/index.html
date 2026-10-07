@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DUbot — El Mejor Bot para WhatsApp</title>
+    <meta name="description" content="Vincula tu Subbot DUbot por código o QR (.subbot code / .subbot qr). Economía, Jadibots, Casino, IA Gemini, Descargas y más. Contacta a Chile Pesos (+56985529966).">
+    
+    <!-- Open Graph / Meta -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="DUbot — Bot Multifuncional de WhatsApp">
+    <meta property="og:description" content="Lleva tus grupos al siguiente nivel con economía, juegos, IA y sub-bots. ¡Consíguelo ahora!">
+    
+    <!-- Google Fonts & Font Awesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-dark: #090d16;
+            --bg-card: rgba(18, 26, 44, 0.75);
+            --bg-card-hover: rgba(28, 40, 68, 0.9);
+            --primary: #25D366;
+            --primary-glow: rgba(37, 211, 102, 0.35);
+            --secondary: #00e5ff;
+            --secondary-glow: rgba(0, 229, 255, 0.35);
+            --accent: #ff007f;
+            --text-main: #f0f4fc;
+            --text-muted: #8ea0be;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(37, 211, 102, 0.4);
+            --gradient: linear-gradient(135deg, #25D366 0%, #00e5ff 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Background glow */
+        .bg-glow {
+            position: fixed;
+            width: 550px;
+            height: 550px;
+            border-radius: 50%;
+            filter: blur(140px);
+            z-index: -1;
+            opacity: 0.18;
+            pointer-events: none;
+        }
+        .glow-1 { top: -100px; left: -100px; background: var(--primary); }
+        .glow-2 { bottom: -150px; right: -100px; background: var(--secondary); }
+        .glow-3 { top: 40%; left: 50%; transform: translate(-50%, -50%); background: var(--accent); opacity: 0.08; }
+
+        /* Navbar */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 1.2rem 8%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(20px);
+            background: rgba(9, 13, 22, 0.7);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: var(--text-main);
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: var(--gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            color: #000;
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-main);
+        }
+
+        .btn-nav {
+            padding: 0.65rem 1.4rem;
+            border-radius: 50px;
+            background: var(--gradient);
+            color: #000 !important;
+            font-weight: 700 !important;
+            text-decoration: none;
+            box-shadow: 0 4px 15px var(--primary-glow);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-nav:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(37, 211, 102, 0.5);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            padding: 9rem 8% 5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.45rem 1.2rem;
+            border-radius: 50px;
+            background: rgba(37, 211, 102, 0.1);
+            border: 1px solid rgba(37, 211, 102, 0.3);
+            color: var(--primary);
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 1.8rem;
+            animation: pulseGlow 3s infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 10px rgba(37, 211, 102, 0.1); }
+            50% { box-shadow: 0 0 25px rgba(37, 211, 102, 0.3); }
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 900;
+            line-height: 1.15;
+            margin-bottom: 1.5rem;
+            max-width: 900px;
+        }
+
+        .gradient-text {
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            max-width: 650px;
+            margin-bottom: 2.5rem;
+            font-weight: 400;
+        }
+
+        .hero-cta-group {
+            display: flex;
+            gap: 1.2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 3.5rem;
+        }
+
+        .btn-main-cta {
+            padding: 1.1rem 2.5rem;
+            font-size: 1.15rem;
+            font-weight: 800;
+            border-radius: 50px;
+            background: #25D366;
+            color: #05140b;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 8px 30px rgba(37, 211, 102, 0.4);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .btn-main-cta:hover {
+            transform: translateY(-4px) scale(1.03);
+            box-shadow: 0 12px 40px rgba(37, 211, 102, 0.6);
+            background: #2ee672;
+            color: #000;
+        }
+
+        .btn-secondary-cta {
+            padding: 1.1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 50px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary-cta:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        
+        .subbot-hero-card {
+            background: rgba(18, 26, 38, 0.7);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 3rem;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 10px 35px rgba(0,0,0,0.4);
+            max-width: 750px;
+            width: 100%;
+        }
+
+        .subbot-card-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-subbot-code {
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%) !important;
+            color: #ffffff !important;
+            box-shadow: 0 8px 25px rgba(37, 211, 102, 0.35) !important;
+        }
+
+        .btn-subbot-qr {
+            background: linear-gradient(135deg, #00f0ff 0%, #0077be 100%) !important;
+            color: #05141f !important;
+            box-shadow: 0 8px 25px rgba(0, 240, 255, 0.35) !important;
+        }
+
+        .btn-subbot-qr:hover {
+            box-shadow: 0 12px 35px rgba(0, 240, 255, 0.55) !important;
+            color: #000000 !important;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+            padding: 1.5rem 3rem;
+            border-radius: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+            margin-top: 1rem;
+        }
+
+        .stat-item h3 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .stat-item p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0;
+        }
+
+        /* Features Section */
+        .section {
+            padding: 6rem 8%;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.8rem;
+        }
+
+        .section-desc {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .grid-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 2.2rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(15px);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-6px);
+            background: var(--bg-card-hover);
+            border-color: var(--border-hover);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        }
+
+        .feature-icon {
+            width: 58px;
+            height: 58px;
+            border-radius: 16px;
+            background: rgba(37, 211, 102, 0.1);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(37, 211, 102, 0.2);
+        }
+
+        .feature-card:nth-child(2) .feature-icon {
+            background: rgba(0, 229, 255, 0.1);
+            color: var(--secondary);
+            border-color: rgba(0, 229, 255, 0.2);
+        }
+
+        .feature-card:nth-child(3) .feature-icon {
+            background: rgba(255, 0, 127, 0.1);
+            color: var(--accent);
+            border-color: rgba(255, 0, 127, 0.2);
+        }
+
+        .feature-card h3 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.98rem;
+            line-height: 1.6;
+        }
+
+        .feature-tags {
+            margin-top: 1.2rem;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.65rem;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+
+        /* Interactive Terminal / Command Simulator */
+        .terminal-container {
+            background: #0d121f;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .terminal-header {
+            background: #151d30;
+            padding: 0.8rem 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .terminal-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .dot-red { background: #ff5f56; }
+        .dot-yellow { background: #ffbd2e; }
+        .dot-green { background: #27c93f; }
+
+        .terminal-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .terminal-body {
+            padding: 1.8rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            min-height: 280px;
+            background: #090e1a;
+        }
+
+        .cmd-line {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1rem;
+            align-items: center;
+        }
+
+        .cmd-prompt {
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .cmd-input {
+            color: #fff;
+        }
+
+        .cmd-output {
+            color: #8fa0c0;
+            margin-bottom: 1.5rem;
+            padding-left: 1rem;
+            border-left: 2px solid rgba(0, 229, 255, 0.3);
+            white-space: pre-wrap;
+        }
+
+        /* Creator Card */
+        .creator-card {
+            background: linear-gradient(135deg, rgba(18, 26, 44, 0.9) 0%, rgba(13, 20, 36, 0.9) 100%);
+            border: 1px solid rgba(37, 211, 102, 0.3);
+            border-radius: 28px;
+            padding: 3rem;
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            gap: 2.5rem;
+            align-items: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .creator-avatar {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background: var(--gradient);
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 0 30px var(--primary-glow);
+        }
+
+        .avatar-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: #0d1322;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5rem;
+            color: var(--primary);
+        }
+
+        .creator-info h3 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 0.3rem;
+        }
+
+        .creator-handle {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .creator-specs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            margin-top: 1.2rem;
+        }
+
+        .spec-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            padding: 0.6rem 1rem;
+            border-radius: 12px;
+        }
+
+        .spec-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .spec-val {
+            font-weight: 700;
+            color: var(--text-main);
+            font-size: 0.95rem;
+        }
+
+        /* Banner CTA */
+        .cta-banner {
+            text-align: center;
+            padding: 5rem 8%;
+            background: linear-gradient(180deg, transparent 0%, rgba(37, 211, 102, 0.06) 100%);
+            border-top: 1px solid var(--border);
+        }
+
+        .cta-banner h2 {
+            font-size: 2.6rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+        }
+
+        .cta-banner p {
+            color: var(--text-muted);
+            font-size: 1.15rem;
+            margin-bottom: 2.2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Floating WhatsApp Button */
+        .floating-wa {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            background: #25D366;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            text-decoration: none;
+            box-shadow: 0 8px 30px rgba(37, 211, 102, 0.6);
+            z-index: 9999;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: bounceBtn 3s infinite;
+        }
+
+        .floating-wa:hover {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 12px 40px rgba(37, 211, 102, 0.8);
+            color: #fff;
+        }
+
+        @keyframes bounceBtn {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        /* Footer */
+        footer {
+            padding: 2.5rem 8%;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            background: rgba(9, 13, 22, 0.95);
+        }
+
+        footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .creator-card { flex-direction: column; text-align: center; }
+            .creator-handle { justify-content: center; }
+            .hero { padding-top: 7rem; }
+            .stats-bar { gap: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Glow background effects -->
+    <div class="bg-glow glow-1"></div>
+    <div class="bg-glow glow-2"></div>
+    <div class="bg-glow glow-3"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <a href="#" class="logo">
+            <div class="logo-icon">
+                <i class="fa-solid fa-robot"></i>
+            </div>
+            <span>DUbot</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="#features">Funciones</a></li>
+            <li><a href="#commands">Comandos</a></li>
+            <li><a href="#colaboraciones">Colaboraciones</a></li>
+            <li><a href="#creator">Creador</a></li>
+        </ul>
+        <div class="nav-subbot-dropdown">
+            <a href="#subbot-selector" class="btn-nav">
+                <i class="fa-solid fa-robot"></i> .subbot (code/qr)
+            </a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="badge">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Official WhatsApp Bot v2.1.0 (Halloween RC & Duolingo Exclusivos 🎃)
+        </div>
+        <h1>
+            Potencia tus grupos de WhatsApp con <span class="gradient-text">DUbot</span>
+        </h1>
+        <p>
+            El bot multifuncional definitivo con Gacha Rollchar de Halloween con Duolingo Exclusivos por Pity y Contador de Unidades en Serie, Super Admin Abuse y Animaciones en Tiempo Real (.anim), Gran Especial de Halloween 🎃, Juegos HTML interactivos estilo Canvas, Asalto al Banco Central, Mascotas coleccionables, Ajedrez con IA, Balatro Roguelike y Gemini AI.
+        </p>
+
+        <div class="subbot-hero-card" id="subbot-selector">
+            <div class="subbot-card-title">
+                <i class="fa-solid fa-plug-circle-check"></i> Elige tu método de vinculación:
+            </div>
+            <div class="hero-cta-group">
+                <a href="https://wa.me/56985529966?text=.subbot%20code" class="btn-main-cta btn-subbot-code" target="_blank">
+                    <i class="fa-solid fa-key"></i>
+                    <div style="text-align:left;">
+                        <div style="font-size:0.75rem; opacity:0.85; font-weight:600;">MÉTODO RECOMENDADO</div>
+                        <div>.subbot code</div>
+                    </div>
+                </a>
+                <a href="https://wa.me/56985529966?text=.subbot%20qr" class="btn-main-cta btn-subbot-qr" target="_blank">
+                    <i class="fa-solid fa-qrcode"></i>
+                    <div style="text-align:left;">
+                        <div style="font-size:0.75rem; opacity:0.85; font-weight:600;">ESCANEAR PANTALLA</div>
+                        <div>.subbot qr</div>
+                    </div>
+                </a>
+                <a href="#features" class="btn-secondary-cta">
+                    <i class="fa-solid fa-compass"></i> Ver Funciones
+                </a>
+            </div>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <h3>100+</h3>
+                <p>Comandos</p>
+            </div>
+            <div class="stat-item">
+                <h3>24/7</h3>
+                <p>Actividad</p>
+            </div>
+            <div class="stat-item">
+                <h3>100%</h3>
+                <p>Personalizable</p>
+            </div>
+            <div class="stat-item">
+                <h3>⚡ v2.1.0</h3>
+                <p>Última Versión</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section" id="features">
+        <div class="section-header">
+            <h2 class="section-title">Todo lo que necesitas en un <span class="gradient-text">Solo Bot</span></h2>
+            <p class="section-desc">Diseñado desde cero con Baileys y Node.js para ofrecer la máxima velocidad, estabilidad y diversión en tus chats.</p>
+        </div>
+
+        <div class="grid-features">
+            <!-- Feature: Halloween Gacha RC & Duolingo Exclusivos -->
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.3);">
+                    <i class="fa-solid fa-gem"></i>
+                </div>
+                <h3>Halloween Gacha RC & Duolingo Pity (v2.1)</h3>
+                <p>Categoría especial 8★ [HALLOWEEN EXCLUSIVO] en .rollchar con 5 Duolingos (Calabaza, Vampiro, Brujo, Fantasma y Segador). Obtenibles exclusivamente por Pity cada 20 tiradas, con contador de unidades serial (#001, #002...) y existencias mundiales.</p>
+                <div class="feature-tags">
+                    <span class="tag">.rollchar</span>
+                    <span class="tag">.rc</span>
+                    <span class="tag">Pity 20</span>
+                    <span class="tag">.mispers</span>
+                    <span class="tag">.ah sell</span>
+                </div>
+            </div>
+
+            <!-- Feature: Super Admin Abuse & Animaciones -->
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(0, 229, 255, 0.15); color: #00e5ff; border-color: rgba(0, 229, 255, 0.3);">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+                <h3>Super Admin Abuse & Animaciones (v2.0)</h3>
+                <p>Animaciones interactivas en vivo editando mensajes en WhatsApp: Reloj de arena con arena cayendo, Bomba con mecha, Cofre con candados, Tragamonedas girando, Consola Matrix hacker, Despegue espacial y Lluvia interactiva donde los usuarios recogen dinero con .recoger.</p>
+                <div class="feature-tags">
+                    <span class="tag">.anim reloj</span>
+                    <span class="tag">.anim bomba</span>
+                    <span class="tag">.anim cofre</span>
+                    <span class="tag">.anim lluvia</span>
+                    <span class="tag">.recoger</span>
+                </div>
+            </div>
+
+            <!-- Feature: Halloween & Noche de Brujas -->
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(255, 117, 24, 0.15); color: #ff7518; border-color: rgba(255, 117, 24, 0.3);">
+                    <i class="fa-solid fa-ghost"></i>
+                </div>
+                <h3>Halloween & Noche de Brujas (v2.0)</h3>
+                <p>Set temporal exclusivo de Octubre: Truco o Trato (.dulceotruco), Tienda de la Bruja & Caldero Mágico (.caldero), Mansión Embrujada (.casadelterror), Cazafantasmas (.cazafantasmas), Tallado de Calabaza (.calabaza), Duelo de Hechizos (.hechizo) y Carrera Zombie (.carrerazombie).</p>
+                <div class="feature-tags">
+                    <span class="tag">.dulceotruco</span>
+                    <span class="tag">.caldero</span>
+                    <span class="tag">.casadelterror</span>
+                    <span class="tag">.cazafantasmas</span>
+                    <span class="tag">.event halloween</span>
+                </div>
+            </div>
+
+            <!-- Feature 0: Pets & VIP -->
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(255, 179, 0, 0.1); color: #ffb300; border-color: rgba(255, 179, 0, 0.2);">
+                    <i class="fa-solid fa-paw"></i>
+                </div>
+                <h3>Mascotas, VIP & Subastas (v1.5.0)</h3>
+                <p>Incuba huevos (.huevo), desbloquea a Duolingo Mítico con x100 monedas, expande hasta 6 slots de pets equipadas (.pet slots), disfruta del rework VIP (.vip) y comercia en la Casa de Subastas (.ah).</p>
+                <div class="feature-tags">
+                    <span class="tag">.huevo</span>
+                    <span class="tag">.pet slots</span>
+                    <span class="tag">.vip</span>
+                    <span class="tag">.ah</span>
+                </div>
+            </div>
+
+            <!-- Feature 1: Globalmsg & Events -->
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(0, 229, 255, 0.1); color: var(--secondary); border-color: rgba(0, 229, 255, 0.2);">
+                    <i class="fa-solid fa-bullhorn"></i>
+                </div>
+                <h3>Transmisión Global & Eventos (v1.4.0)</h3>
+                <p>Difusión masiva con etiqueta oculta a todos los grupos donde se ha usado el bot (.globalmsg) y eventos globales automáticos con duración en minutos u horas (.event luck 30m).</p>
+                <div class="feature-tags">
+                    <span class="tag">.globalmsg</span>
+                    <span class="tag">.event 30m</span>
+                    <span class="tag">.endevent</span>
+                </div>
+            </div>
+
+            <!-- Feature 2: Balatro Roguelike -->
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(255, 0, 127, 0.1); color: var(--accent); border-color: rgba(255, 0, 127, 0.2);">
+                    <i class="fa-solid fa-spade"></i>
+                </div>
+                <h3>Balatro ASCII Roguelike Poker</h3>
+                <p>El aclamado juego de póker roguelike con cartas en arte ASCII para móviles. 30 Jokers pasivos, 9 Cartas de Planetas, 8 ANTES con Boss Blinds y Tienda interactiva.</p>
+                <div class="feature-tags">
+                    <span class="tag">.balatro</span>
+                    <span class="tag">.bplay</span>
+                    <span class="tag">.bshop</span>
+                </div>
+            </div>
+
+            <!-- Feature 3: Jadibots with Custom Prefixes -->
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fa-solid fa-code-branch"></i>
+                </div>
+                <h3>Jadibots con Prefijo Libre</h3>
+                <p>Convierte tu número en un sub-bot en segundos. Elige tu prefijo favorito (letras como b. o símbolos como !, #, $, /) y disfruta de ejecución directa sin trabas.</p>
+                <div class="feature-tags">
+                    <span class="tag">.jadibot code !</span>
+                    <span class="tag">.subbots</span>
+                    <span class="tag">.setjadiprefix</span>
+                </div>
+            </div>
+
+            <!-- Feature 4: Economy & Banking -->
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fa-solid fa-coins"></i>
+                </div>
+                <h3>Economía, Banco & Préstamos</h3>
+                <p>Sistema bancario con bóveda, intereses diarios, transferencias, trabajos, robos con cooldown y sistema de cárcel con multas y rescates.</p>
+                <div class="feature-tags">
+                    <span class="tag">.work</span>
+                    <span class="tag">.daily</span>
+                    <span class="tag">.prestamo</span>
+                    <span class="tag">.rob</span>
+                </div>
+            </div>
+
+            <!-- Feature 5: PvP & Group Management -->
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(255, 184, 0, 0.15); color: #ffb800; border-color: rgba(255, 184, 0, 0.3);">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <h3>Duelos PvP & Moderación Grupal</h3>
+                <p>Desafía a otros a combate por dinero (.duelo), invoca a todos los miembros (.tagall), envía avisos ocultos (.hidetag) y modera con expulsión (.kick).</p>
+                <div class="feature-tags">
+                    <span class="tag">.duelo</span>
+                    <span class="tag">.tagall</span>
+                    <span class="tag">.hidetag</span>
+                    <span class="tag">.kick</span>
+                </div>
+            </div>
+
+            <!-- Feature 6: AI, TTS & Multimedia -->
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+                <h3>IA Gemini, Voz TTS & Clima</h3>
+                <p>Inteligencia Artificial Gemini, conversión de texto a nota de voz (.tts), pronóstico del clima satelital (.clima), descargas de música (.play) y stickers.</p>
+                <div class="feature-tags">
+                    <span class="tag">.ai</span>
+                    <span class="tag">.tts</span>
+                    <span class="tag">.clima</span>
+                    <span class="tag">.sticker</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Terminal Command Demo -->
+    <section class="section" id="commands">
+        <div class="section-header">
+            <h2 class="section-title">Comandos <span class="gradient-text">Inteligentes</span></h2>
+            <p class="section-desc">Corrección automática de tipeo, sugerencias en vivo y respuestas al instante.</p>
+        </div>
+
+        <div class="terminal-container">
+            <div class="terminal-header">
+                <div class="terminal-dots">
+                    <div class="dot dot-red"></div>
+                    <div class="dot dot-yellow"></div>
+                    <div class="dot dot-green"></div>
+                </div>
+                <div class="terminal-title">WhatsApp Session — DUbot Core v2.1.0</div>
+            </div>
+            <div class="terminal-body">
+                <div class="cmd-line">
+                    <span class="cmd-prompt">Admin:</span>
+                    <span class="cmd-input">.event luck 30m</span>
+                </div>
+                <div class="cmd-output">🍀 *¡EVENTO GLOBAL INICIADO EN DUBOT!* 🌟
+🎯 *Evento:* Suerte x2
+📖 *Detalles:* Probabilidad doble en casino y minijuegos
+⏳ *Duración:* 30 minuto(s)
+📡 Notificado a todos los grupos con etiqueta oculta.</div>
+
+                <div class="cmd-line">
+                    <span class="cmd-prompt">User:</span>
+                    <span class="cmd-input">.balatro</span>
+                </div>
+                <div class="cmd-output">🃏 *BALATRO POKER ROGUELIKE* 🃏
+┌───┐ ┌───┐ ┌───┐ ┌───┐
+│ A │ │ K │ │ Q │ │ J │
+│ ♥ │ │ ♥ │ │ ♥ │ │ ♥ │
+└───┘ └───┘ └───┘ └───┘
+🎯 Meta: 300 pts | 🃏 Jokers (1/5): Popcorn (+20 Mult)
+Usa: *.bplay 1 2 3 4* o *.bshop*</div>
+
+                <div class="cmd-line">
+                    <span class="cmd-prompt">User:</span>
+                    <span class="cmd-input">.jadibot code !</span>
+                </div>
+                <div class="cmd-output">🤖 *CÓDIGO DE VINCULACIÓN GENERADO*
+📱 Número: +569XXXXXXXX
+🔤 Prefijo personalizado: *!* (ejemplo: !menu)
+🔢 Código: *8492-1204*
+💡 Ingresa el código en Dispositivos vinculados.</div>
+            </div>
+        </div>
+    </section>
+
+    
+    <!-- Paid Collaborations Section -->
+    <section class="section" id="colaboraciones">
+        <div class="section-header">
+            <h2 class="section-title">Colaboraciones <span class="gradient-text">Pagadas & Partners</span></h2>
+            <p class="section-desc">Impulsa tu proyecto, marca, canal o comunidad de WhatsApp con la audiencia y tecnología de DUbot.</p>
+        </div>
+
+        <div class="grid-features" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(255, 184, 0, 0.15); color: #ffb800;">
+                    <i class="fa-solid fa-bullhorn"></i>
+                </div>
+                <h3>Difusión & Broadcast Global</h3>
+                <p>Envío de mensajes masivos con mención a todos los miembros (Tag All) en grupos y canales asociados para promocionar tus redes o enlaces.</p>
+                <div class="feature-tags">
+                    <span class="tag" style="border-color: rgba(255, 184, 0, 0.4); color: #ffb800;">Anuncios</span>
+                    <span class="tag">Mención Masiva</span>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(0, 240, 255, 0.15); color: #00f0ff;">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <h3>Sub-Bot Dedicado de Marca</h3>
+                <p>Obtén un bot exclusivo con tu propio número de teléfono, prefijo y comandos personalizados con Inteligencia Artificial Gemini adaptada a tu negocio.</p>
+                <div class="feature-tags">
+                    <span class="tag" style="border-color: rgba(0, 240, 255, 0.4); color: #00f0ff;">Marca Propia</span>
+                    <span class="tag">IA Dedicada</span>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(142, 68, 173, 0.15); color: #9b59b6;">
+                    <i class="fa-solid fa-gem"></i>
+                </div>
+                <h3>Integración en Gacha & Economía</h3>
+                <p>Añade personajes, coleccionables o ítems temáticos exclusivos de tu proyecto en el gacha y tienda del bot para crear engagement con los usuarios.</p>
+                <div class="feature-tags">
+                    <span class="tag" style="border-color: rgba(155, 89, 182, 0.4); color: #9b59b6;">Gacha</span>
+                    <span class="tag">Ítem Exclusivo</span>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(37, 211, 102, 0.15); color: #25D366;">
+                    <i class="fa-solid fa-award"></i>
+                </div>
+                <h3>Patrocinador Oficial en Web & Menú</h3>
+                <p>Tu logo, enlace y créditos destacados en el comando <code>.menu</code> de WhatsApp y en la página web oficial del proyecto.</p>
+                <div class="feature-tags">
+                    <span class="tag" style="border-color: rgba(37, 211, 102, 0.4); color: #25D366;">Sponsor Web</span>
+                    <span class="tag">Créditos .menu</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 3rem;">
+            <a href="https://wa.me/56985529966?text=Hola%20Chile%20Pesos%2C%20me%20interesa%20una%20colaboraci%C3%B3n%20pagada%20con%20DUbot" class="btn-main-cta" style="font-size: 1.15rem; padding: 1rem 2.5rem;" target="_blank">
+                <i class="fa-brands fa-whatsapp"></i> Cotizar Colaboración Pagada
+            </a>
+        </div>
+    </section>
+
+    <!-- Creator Section -->
+    <section class="section" id="creator">
+        <div class="section-header">
+            <h2 class="section-title">Desarrollador & <span class="gradient-text">Contacto</span></h2>
+            <p class="section-desc">Soporte directo, personalizaciones y solicitudes para añadir el bot a tus grupos.</p>
+        </div>
+
+        <div class="creator-card">
+            <div class="creator-avatar">
+                <div class="avatar-inner">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
+            </div>
+            <div class="creator-info">
+                <h3>Chile Pesos</h3>
+                <div class="creator-handle">
+                    <i class="fa-brands fa-whatsapp"></i> @doodle duo
+                </div>
+                <p style="color: var(--text-muted);">
+                    Creador y desarrollador de <strong>DUbot</strong>. ¿Quieres el bot en tu grupo o necesitas soporte personalizado? Escríbeme directamente a WhatsApp.
+                </p>
+
+                <div class="creator-specs">
+                    <div class="spec-item">
+                        <div class="spec-label">Rol</div>
+                        <div class="spec-val">Creador</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">Plataforma</div>
+                        <div class="spec-val">PC</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">Lenguaje</div>
+                        <div class="spec-val">Node.js</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">Librería</div>
+                        <div class="spec-val">Baileys</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 1.8rem; display: flex; gap: 0.8rem; flex-wrap: wrap;">
+                    <a href="https://wa.me/56985529966?text=.subbot%20code" class="btn-main-cta btn-subbot-code" style="padding: 0.85rem 1.4rem; font-size: 0.95rem;" target="_blank">
+                        <i class="fa-solid fa-key"></i> .subbot code
+                    </a>
+                    <a href="https://wa.me/56985529966?text=.subbot%20qr" class="btn-main-cta btn-subbot-qr" style="padding: 0.85rem 1.4rem; font-size: 0.95rem;" target="_blank">
+                        <i class="fa-solid fa-qrcode"></i> .subbot qr
+                    </a>
+                    <a href="https://wa.me/56985529966?text=Hola%20Chile%20Pesos%2C%20tengo%20una%20duda%20con%20DUbot" class="btn-secondary-cta" style="padding: 0.85rem 1.4rem; font-size: 0.95rem;" target="_blank">
+                        <i class="fa-brands fa-whatsapp"></i> Contactar Creador
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Banner -->
+    <section class="cta-banner">
+        <h2>¿Listo para activar tu <span class="gradient-text">Sub-bot</span>?</h2>
+        <p>Elige tu método preferido (.subbot code o .subbot qr) para enviar el comando al bot y recibir tu acceso al instante.</p>
+        <div style="display: flex; gap: 1.2rem; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem;">
+            <a href="https://wa.me/56985529966?text=.subbot%20code" class="btn-main-cta btn-subbot-code" style="font-size: 1.15rem; padding: 1.1rem 2.2rem;" target="_blank">
+                <i class="fa-solid fa-key"></i> .subbot code (8 dígitos)
+            </a>
+            <a href="https://wa.me/56985529966?text=.subbot%20qr" class="btn-main-cta btn-subbot-qr" style="font-size: 1.15rem; padding: 1.1rem 2.2rem;" target="_blank">
+                <i class="fa-solid fa-qrcode"></i> .subbot qr (Código QR)
+            </a>
+        </div>
+    </section>
+
+    <!-- Floating WhatsApp Button -->
+    <a href="https://wa.me/56985529966?text=Hola%20Chile%20Pesos%2C%20quiero%20conseguir%20el%20bot%20DUbot%20para%20mi%20WhatsApp" class="floating-wa" target="_blank" title="Contactar por WhatsApp (+56985529966)">
+        <i class="fa-brands fa-whatsapp"></i>
+    </a>
+
+    <!-- Footer -->
+    <footer>
+        <p>© 2026 <strong>DUbot</strong> — Desarrollado por <a href="https://wa.me/56985529966" target="_blank">Chile Pesos (@doodle duo)</a> • <a href="https://github.com/doodle1duo/duBoT-WA-bot" target="_blank"><i class="fa-brands fa-github"></i> GitHub Repository</a></p>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>🏦 Asalto al Banco — DUbot</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #0a0a0f;
+  color: #fff;
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0 0 30px;
+  overflow-x: hidden;
+}
+/* ─── PANTALLAS ─── */
+.screen { display:none; flex-direction:column; align-items:center; width:100%; max-width:460px; padding:20px 16px; }
+.screen.active { display:flex; }
+
+/* ─── INTRO ─── */
+.intro-banner {
+  width:100%; border-radius:18px;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border: 2px solid #e94560;
+  padding: 24px 20px; text-align:center; margin-bottom:20px;
+}
+.intro-banner h1 { font-size:1.8rem; color:#e94560; margin-bottom:4px; }
+.intro-banner p { color:#aaa; font-size:0.88rem; line-height:1.5; }
+.bag-info {
+  background:rgba(255,255,255,0.05); border-radius:12px;
+  padding:12px 16px; margin-bottom:20px; text-align:center; width:100%;
+}
+.bag-info span { color:#f5c518; font-weight:700; }
+.btn-start {
+  background: linear-gradient(135deg, #e94560, #c0392b);
+  color:#fff; border:none; border-radius:16px;
+  padding:16px 40px; font-size:1.1rem; font-weight:700;
+  cursor:pointer; width:100%;
+  box-shadow: 0 6px 20px rgba(233,69,96,0.4);
+  transition: transform 0.1s;
+}
+.btn-start:active { transform: scale(0.97); }
+
+/* ─── MINIJUEGO BASE ─── */
+.game-header {
+  width:100%; display:flex; align-items:center; gap:10px;
+  margin-bottom:16px;
+}
+.game-num {
+  background: linear-gradient(135deg, #e94560, #c0392b);
+  color:#fff; font-weight:700; font-size:0.8rem;
+  padding:4px 12px; border-radius:20px; white-space:nowrap;
+}
+.game-title { font-size:1rem; font-weight:700; color:#fff; }
+.progress-bar { width:100%; height:5px; background:rgba(255,255,255,0.1); border-radius:10px; margin-bottom:20px; }
+.progress-fill { height:5px; border-radius:10px; background: linear-gradient(90deg, #e94560, #f5c518); transition: width 0.5s; }
+
+/* ─── TIMER ─── */
+.timer-ring {
+  position:relative; width:80px; height:80px; margin-bottom:16px;
+}
+.timer-ring svg { transform: rotate(-90deg); }
+.timer-ring circle { fill:none; stroke:rgba(255,255,255,0.1); stroke-width:8; }
+.timer-ring .arc { stroke:#e94560; stroke-width:8; stroke-linecap:round; stroke-dasharray:220; stroke-dashoffset:0; transition:stroke-dashoffset 1s linear, stroke 0.5s; }
+.timer-num { position:absolute; top:50%;left:50%; transform:translate(-50%,-50%); font-size:1.5rem; font-weight:700; }
+
+/* ─── MINIJUEGO 1: HACKEO ─── */
+.terminal {
+  width:100%; background:#000; border-radius:12px;
+  border: 2px solid #00ff41; padding:16px; font-family:'Courier New',monospace;
+  margin-bottom:16px;
+}
+.terminal-line { color:#00ff41; font-size:0.85rem; margin-bottom:4px; }
+.terminal-line.blink { animation: blink 0.8s step-end infinite; }
+.pin-display {
+  font-size:2.8rem; font-weight:700; letter-spacing:12px;
+  color:#00ff41; text-align:center; text-shadow:0 0 20px #00ff41;
+  margin:10px 0; font-family:'Courier New',monospace;
+}
+.numpad {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:8px;
+  width:100%; max-width:280px; margin:0 auto;
+}
+.num-btn {
+  background:rgba(255,255,255,0.07); border:2px solid rgba(255,255,255,0.15);
+  color:#fff; border-radius:12px; padding:16px; font-size:1.3rem; font-weight:700;
+  cursor:pointer; text-align:center; transition:background 0.1s,transform 0.1s;
+  user-select:none;
+}
+.num-btn:active { background:rgba(233,69,96,0.3); border-color:#e94560; transform:scale(0.94); }
+.num-btn.del { color:#e94560; }
+.pin-input-display {
+  text-align:center; font-size:2rem; letter-spacing:8px;
+  color:#fff; min-height:44px; margin-bottom:10px;
+  background:rgba(255,255,255,0.06); border-radius:10px; padding:8px;
+}
+
+/* ─── MINIJUEGO 2: CABLES ─── */
+.cables-container { width:100%; margin-bottom:16px; }
+.cable-option {
+  display:flex; align-items:center; gap:14px;
+  padding:14px 16px; border-radius:14px; margin-bottom:10px;
+  border:2px solid rgba(255,255,255,0.1);
+  cursor:pointer; transition:all 0.15s; user-select:none;
+}
+.cable-option:active { transform:scale(0.98); }
+.cable-line { flex:1; height:14px; border-radius:7px; position:relative; }
+.cable-red { background: linear-gradient(90deg,#8b0000,#ff0000,#8b0000); box-shadow:0 0 10px rgba(255,0,0,0.5); }
+.cable-blue { background: linear-gradient(90deg,#00008b,#0000ff,#00008b); box-shadow:0 0 10px rgba(0,0,255,0.5); }
+.cable-green { background: linear-gradient(90deg,#006400,#00c800,#006400); box-shadow:0 0 10px rgba(0,200,0,0.5); }
+.cable-label { font-size:1rem; font-weight:700; white-space:nowrap; min-width:60px; }
+.cable-scissors { font-size:1.4rem; }
+.postit {
+  background:#f5e642; color:#1a1a1a; border-radius:8px;
+  padding:12px 14px; font-size:0.82rem; line-height:1.5;
+  margin-bottom:14px; box-shadow: 3px 3px 8px rgba(0,0,0,0.4);
+  font-style:italic; position:relative;
+}
+.postit::before {
+  content:'📋 Reporte Infiltrado:'; display:block;
+  font-weight:700; font-style:normal; font-size:0.75rem; margin-bottom:4px; color:#555;
+}
+
+/* ─── MINIJUEGO 3: FUGA ─── */
+.map-container {
+  width:100%; border-radius:16px; overflow:hidden;
+  border:2px solid rgba(255,255,255,0.15); margin-bottom:16px;
+  position:relative;
+}
+.map-svg { width:100%; display:block; }
+.radio-msg {
+  background:linear-gradient(135deg,#1a1a2e,#0d0d1a);
+  border:2px solid #4a90d9; border-radius:10px;
+  padding:12px 14px; font-size:0.82rem; line-height:1.5;
+  margin-bottom:14px; color:#b0cce8;
+}
+.radio-msg::before {
+  content:'📻 Frecuencia Policial Interceptada:'; display:block;
+  font-weight:700; font-size:0.72rem; color:#4a90d9; margin-bottom:4px;
+}
+.route-btns { display:flex; gap:10px; width:100%; }
+.route-btn {
+  flex:1; padding:14px; border-radius:14px; border:2px solid rgba(255,255,255,0.15);
+  background:rgba(255,255,255,0.06); color:#fff; font-size:1rem; font-weight:700;
+  cursor:pointer; text-align:center; transition:all 0.15s;
+}
+.route-btn:active { transform:scale(0.96); }
+.route-A { border-color:#e67e22; }
+.route-B { border-color:#3498db; }
+.route-C { border-color:#9b59b6; }
+
+/* ─── RESULTADO ─── */
+.result-screen {
+  text-align:center; padding:30px 20px;
+}
+.result-big { font-size:4rem; margin-bottom:12px; }
+.result-h { font-size:1.6rem; font-weight:700; margin-bottom:8px; }
+.result-sub { color:#aaa; font-size:0.9rem; margin-bottom:24px; line-height:1.6; }
+.btn-wa {
+  display:block; background:linear-gradient(135deg,#25d366,#128c7e);
+  color:#fff; border:none; border-radius:16px; padding:16px 28px;
+  font-size:1rem; font-weight:700; cursor:pointer; text-decoration:none;
+  box-shadow:0 6px 20px rgba(37,211,102,0.4); width:100%; text-align:center;
+}
+.btn-wa:active { transform:scale(0.97); }
+.btn-retry {
+  display:block; background:rgba(255,255,255,0.08); border:none;
+  color:#aaa; border-radius:14px; padding:12px; margin-top:10px;
+  font-size:0.9rem; cursor:pointer; width:100%;
+}
+
+@keyframes blink { 50%{opacity:0;} }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+@keyframes pop { 0%{transform:scale(0.7);opacity:0} 80%{transform:scale(1.08)} 100%{transform:scale(1);opacity:1} }
+.pop { animation:pop 0.35s ease-out; }
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div class="screen active" id="sc-intro">
+  <div class="intro-banner">
+    <h1>🏦🔫 ASALTO AL BANCO</h1>
+    <p>Supera <strong>3 minijuegos</strong> para vaciar la bóveda.<br>
+    Uno falla y todos van a la cárcel.</p>
+  </div>
+  <div class="bag-info">
+    🎒 Bolsa: <span id="bagName">{{BAG_NAME}}</span><br>
+    💰 Capacidad: <span>$<span id="bagCap">{{BAG_CAP}}</span></span><br>
+    👥 Banda: <span id="members">{{MEMBERS}}</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <button class="btn-start" onclick="startGame()">🔫 ¡COMENZAR ASALTO!</button>
+</div>
+
+<!-- MINIJUEGO 1: HACKEO -->
+<div class="screen" id="sc-game1">
+  <div class="game-header">
+    <span class="game-num">🎮 1/3</span>
+    <span class="game-title">💻 Hackeo de Cámaras</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" style="width:33%"></div></div>
+  <div class="timer-ring">
+    <svg viewBox="0 0 80 80">
+      <circle cx="40" cy="40" r="35"/>
+      <circle class="arc" id="arc1" cx="40" cy="40" r="35"/>
+    </svg>
+    <span class="timer-num" id="timer1">25</span>
+  </div>
+  <div class="terminal">
+    <div class="terminal-line">▶ ACCESO BANCO_CENTRAL_SYS v3.1</div>
+    <div class="terminal-line">▶ Detectando señal de red...</div>
+    <div class="terminal-line blink">▶ INGRESE CÓDIGO PIN PARA DESACTIVAR CÁMARAS_</div>
+  </div>
+  <div class="pin-display" id="pin1">????</div>
+  <div class="pin-input-display" id="pinInput">_ _ _ _</div>
+  <div class="numpad">
+    <div class="num-btn" onclick="numPress('1')">1</div>
+    <div class="num-btn" onclick="numPress('2')">2</div>
+    <div class="num-btn" onclick="numPress('3')">3</div>
+    <div class="num-btn" onclick="numPress('4')">4</div>
+    <div class="num-btn" onclick="numPress('5')">5</div>
+    <div class="num-btn" onclick="numPress('6')">6</div>
+    <div class="num-btn" onclick="numPress('7')">7</div>
+    <div class="num-btn" onclick="numPress('8')">8</div>
+    <div class="num-btn" onclick="numPress('9')">9</div>
+    <div class="num-btn del" onclick="numDel()">⌫</div>
+    <div class="num-btn" onclick="numPress('0')">0</div>
+    <div class="num-btn" onclick="numConfirm()">✓</div>
+  </div>
+</div>
+
+<!-- MINIJUEGO 2: CABLES -->
+<div class="screen" id="sc-game2">
+  <div class="game-header">
+    <span class="game-num">🎮 2/3</span>
+    <span class="game-title">⚡ Forzar la Bóveda</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" style="width:66%"></div></div>
+  <div class="timer-ring">
+    <svg viewBox="0 0 80 80">
+      <circle cx="40" cy="40" r="35"/>
+      <circle class="arc" id="arc2" cx="40" cy="40" r="35"/>
+    </svg>
+    <span class="timer-num" id="timer2">25</span>
+  </div>
+  <div class="postit" id="cableClue">Cargando pista...</div>
+  <div class="cables-container">
+    <div class="cable-option" onclick="cutCable(1)">
+      <span class="cable-scissors">✂️</span>
+      <div class="cable-line cable-red"></div>
+      <span class="cable-label">🔴 Rojo</span>
+    </div>
+    <div class="cable-option" onclick="cutCable(2)">
+      <span class="cable-scissors">✂️</span>
+      <div class="cable-line cable-blue"></div>
+      <span class="cable-label">🔵 Azul</span>
+    </div>
+    <div class="cable-option" onclick="cutCable(3)">
+      <span class="cable-scissors">✂️</span>
+      <div class="cable-line cable-green"></div>
+      <span class="cable-label">🟢 Verde</span>
+    </div>
+  </div>
+</div>
+
+<!-- MINIJUEGO 3: FUGA -->
+<div class="screen" id="sc-game3">
+  <div class="game-header">
+    <span class="game-num">🎮 3/3</span>
+    <span class="game-title">🚓 La Gran Fuga</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" style="width:99%"></div></div>
+  <div class="timer-ring">
+    <svg viewBox="0 0 80 80">
+      <circle cx="40" cy="40" r="35"/>
+      <circle class="arc" id="arc3" cx="40" cy="40" r="35"/>
+    </svg>
+    <span class="timer-num" id="timer3">20</span>
+  </div>
+  <div class="radio-msg" id="radioHint">Cargando frecuencia...</div>
+  <div class="map-container">
+    <svg class="map-svg" viewBox="0 0 360 220" xmlns="http://www.w3.org/2000/svg">
+      <!-- Fondo ciudad -->
+      <rect width="360" height="220" fill="#1a1a2e"/>
+      <!-- Bloques ciudad -->
+      <rect x="10" y="10" width="60" height="50" rx="4" fill="#2d2d4e" opacity="0.8"/>
+      <rect x="80" y="10" width="40" height="50" rx="4" fill="#2d2d4e" opacity="0.8"/>
+      <rect x="230" y="10" width="50" height="50" rx="4" fill="#2d2d4e" opacity="0.8"/>
+      <rect x="290" y="10" width="60" height="50" rx="4" fill="#2d2d4e" opacity="0.8"/>
+      <rect x="10" y="160" width="70" height="50" rx="4" fill="#2d2d4e" opacity="0.8"/>
+      <rect x="280" y="160" width="70" height="50" rx="4" fill="#2d2d4e" opacity="0.8"/>
+      <!-- Banco (centro) -->
+      <rect x="140" y="75" width="80" height="65" rx="6" fill="#e94560" opacity="0.9"/>
+      <text x="180" y="108" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">🏦 BANCO</text>
+      <text x="180" y="120" text-anchor="middle" font-size="7" fill="#ffaaaa">OBJETIVO</text>
+      <!-- Ruta A: alcantarillado (abajo izquierda) -->
+      <path d="M 180 140 L 60 185" stroke="#e67e22" stroke-width="3" stroke-dasharray="6 4" fill="none" opacity="0.7"/>
+      <text x="35" y="200" font-size="13" fill="#e67e22" font-weight="700">🅰️</text>
+      <!-- Ruta B: autopista (derecha) -->
+      <path d="M 220 108 L 340 108" stroke="#3498db" stroke-width="3" stroke-dasharray="6 4" fill="none" opacity="0.7"/>
+      <text x="332" y="104" font-size="13" fill="#3498db" font-weight="700">🅱️</text>
+      <!-- Ruta C: metro (arriba) -->
+      <path d="M 180 75 L 180 20" stroke="#9b59b6" stroke-width="3" stroke-dasharray="6 4" fill="none" opacity="0.7"/>
+      <text x="170" y="15" font-size="13" fill="#9b59b6" font-weight="700">🅲️</text>
+      <!-- Patrullas (las incorrectas tienen 🚔) -->
+      <text id="policeA" x="70" y="196" font-size="16" opacity="0">🚔</text>
+      <text id="policeB" x="310" y="122" font-size="16" opacity="0">🚔</text>
+      <text id="policeC" x="190" y="14" font-size="16" opacity="0">🚔</text>
+    </svg>
+  </div>
+  <div class="route-btns">
+    <button class="route-btn route-A" onclick="chooseRoute('A')">🅰️ Alcantarillado</button>
+    <button class="route-btn route-B" onclick="chooseRoute('B')">🅱️ Autopista</button>
+    <button class="route-btn route-C" onclick="chooseRoute('C')">🅲️ Metro</button>
+  </div>
+</div>
+
+<!-- RESULTADO -->
+<div class="screen" id="sc-result">
+  <div class="result-screen">
+    <div class="result-big pop" id="resultEmoji"></div>
+    <div class="result-h" id="resultH"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <div style="display:flex;gap:8px;width:100%;margin-top:10px;flex-wrap:wrap;justify-content:center;">
+      <a class="btn-wa" id="resultLink" href="#" style="flex:1;min-width:130px;text-align:center;">📲 Enviar a WhatsApp</a>
+      <button class="btn-wa" id="btnCopy" onclick="copyResultCmd()" style="flex:1;min-width:130px;background:rgba(255,255,255,0.15);box-shadow:none;border:1px solid rgba(255,255,255,0.3);">📋 Copiar comando</button>
+    </div>
+    <p style="margin-top:12px;font-size:0.75rem;color:#aaa;">O escribe/copia esto en el chat:<br><code id="cmdText" style="background:#111;padding:4px 8px;border-radius:6px;color:#00ff41;user-select:all;display:inline-block;margin-top:4px;"></code></p>
+    <button class="btn-retry" onclick="location.reload()">🔄 Reintentar</button>
+  </div>
+</div>
+
+<script>
+const BOT_PHONE = '{{BOT_PHONE}}';
+const PREFIX = '{{PREFIX}}';
+const TOKEN = '{{TOKEN}}';
+const BAG_CAP = parseInt('{{BAG_CAP}}') || 10000;
+
+// Estado
+let currentPin = '';
+let pinEntered = '';
+let correctCable = 1;
+let safeRoute = 'A';
+let timers = {};
+let gameState = { g1:false, g2:false, g3:false };
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function startGame() { showScreen('sc-game1'); startGame1(); }
+
+// ─── MINIJUEGO 1 ───
+function startGame1() {
+  currentPin = String(Math.floor(1000 + Math.random()*9000));
+  document.getElementById('pin1').textContent = currentPin;
+  pinEntered = '';
+  updatePinDisplay();
+  startTimer('arc1','timer1', 25, ()=>fail('⏱️ Tiempo agotado. Las cámaras te grabaron.'));
+}
+
+function numPress(n) {
+  if(pinEntered.length>=4) return;
+  pinEntered += n;
+  updatePinDisplay();
+  if(pinEntered.length===4) setTimeout(numConfirm, 200);
+}
+
+function numDel() { pinEntered = pinEntered.slice(0,-1); updatePinDisplay(); }
+
+function updatePinDisplay() {
+  const inp = document.getElementById('pinInput');
+  const chars = pinEntered.split('');
+  while(chars.length<4) chars.push('_');
+  inp.textContent = chars.join(' ');
+}
+
+function numConfirm() {
+  if(pinEntered === currentPin) {
+    clearTimers();
+    gameState.g1 = true;
+    showScreen('sc-game2');
+    startGame2();
+  } else {
+    pinEntered = '';
+    updatePinDisplay();
+    document.getElementById('pin1').style.animation='shake 0.3s';
+    setTimeout(()=>document.getElementById('pin1').style.animation='',300);
+  }
+}
+
+// ─── MINIJUEGO 2 ───
+function startGame2() {
+  correctCable = Math.floor(Math.random()*3)+1;
+  const clues = {
+    1: "El cable Azul provoca un cortocircuito mortal y el Verde libera gas somnífero. ¡Solo el Rojo es seguro!",
+    2: "El cable Rojo activa la alarma y el Verde detona los pernos. ¡El Azul es la única opción!",
+    3: "El cable Rojo sella la bóveda y el Azul electrocuta la compuerta. ¡Corta el Verde!"
+  };
+  document.getElementById('cableClue').textContent = clues[correctCable];
+  startTimer('arc2','timer2', 25, ()=>fail('⏱️ Tiempo agotado. La bóveda se selló con gas somnífero.'));
+}
+
+function cutCable(n) {
+  clearTimers();
+  if(n === correctCable) {
+    gameState.g2 = true;
+    showScreen('sc-game3');
+    startGame3();
+  } else {
+    fail('💥 ¡Cable equivocado! El cortocircuito alertó a la policía.');
+  }
+}
+
+// ─── MINIJUEGO 3 ───
+function startGame3() {
+  const routes = ['A','B','C'];
+  safeRoute = routes[Math.floor(Math.random()*3)];
+  const hints = {
+    'A': "¡Comandante, bloqueamos la Autopista (B) con tanquetas y el Metro (C) está acordonado! ¡Sin unidades en los túneles del alcantarillado (A)!",
+    'B': "¡Derrumbe en el alcantarillado (A) y redada en el Metro (C)! ¡La Autopista Express (B) quedó desprotegida!",
+    'C': "¡Sellamos el alcantarillado (A) y helicópteros vigilan la Autopista (B)! ¡El Metro (C) quedó sin cobertura!"
+  };
+  document.getElementById('radioHint').textContent = hints[safeRoute];
+  // Mostrar patrullas en rutas incorrectas
+  ['A','B','C'].forEach(r=>{
+    if(r!==safeRoute) {
+      const el = document.getElementById('police'+r);
+      if(el) el.style.opacity='1';
+    }
+  });
+  startTimer('arc3','timer3', 20, ()=>fail('⏱️ No decidieron a tiempo. El SWAT acordonó el edificio.'));
+}
+
+function chooseRoute(r) {
+  clearTimers();
+  if(r === safeRoute) {
+    gameState.g3 = true;
+    win();
+  } else {
+    fail(`🚔 ¡Ruta ${r} bloqueada! Cayeron directo en el operativo policial.`);
+  }
+}
+
+// ─── TIMER ───
+function startTimer(arcId, numId, seconds, onFail) {
+  const arc = document.getElementById(arcId);
+  const num = document.getElementById(numId);
+  const circumference = 220;
+  let remaining = seconds;
+  num.textContent = remaining;
+  arc.style.strokeDashoffset = '0';
+  arc.style.stroke = '#e94560';
+
+  const id = setInterval(()=>{
+    remaining--;
+    num.textContent = remaining;
+    const offset = circumference * (1 - remaining/seconds);
+    arc.style.strokeDashoffset = offset;
+    if(remaining <= 5) arc.style.stroke = '#ff6b6b';
+    if(remaining <= 0) { clearInterval(id); onFail(); }
+  }, 1000);
+  timers[arcId] = id;
+}
+
+function clearTimers() {
+  Object.values(timers).forEach(id=>clearInterval(id));
+  timers = {};
+}
+
+// ─── WIN/FAIL ───
+function win() {
+  clearTimers();
+  const loot = BAG_CAP;
+  showScreen('sc-result');
+  document.getElementById('resultEmoji').textContent='🎉💰';
+  document.getElementById('resultH').textContent='¡ASALTO COMPLETADO!';
+  document.getElementById('resultSub').innerHTML=
+    `¡Superaron los 3 minijuegos y escaparon con el botín!<br><strong>+$${loot.toLocaleString()}</strong> en efectivo para cada miembro de la banda.`;
+  const phone = BOT_PHONE.replace(/[^0-9]/g,'');
+  const cmd = encodeURIComponent(`${PREFIX}resultado_heist exito ${TOKEN}`);
+  const rLink = document.getElementById('resultLink');
+  rLink.href = phone ? `whatsapp://send?phone=${phone}&text=${cmd}` : `https://wa.me/?text=${cmd}`;
+  rLink.onclick = () => {
+    setTimeout(() => {
+      if (phone) window.location.href = `https://wa.me/${phone}?text=${cmd}`;
+    }, 600);
+  };
+  const ct = document.getElementById('cmdText');
+  if(ct) ct.textContent = `${PREFIX}resultado_heist exito ${TOKEN}`;
+}
+
+function fail(reason) {
+  clearTimers();
+  showScreen('sc-result');
+  document.getElementById('resultEmoji').textContent='🚔💀';
+  document.getElementById('resultH').textContent='¡CAPTURADOS!';
+  document.getElementById('resultSub').innerHTML=
+    `${reason}<br><br>Multa: <strong>-$${BAG_CAP.toLocaleString()}</strong> · Cuenta bloqueada 1 hora.`;
+  const phone = BOT_PHONE.replace(/[^0-9]/g,'');
+  const cmd = encodeURIComponent(`${PREFIX}resultado_heist fallo ${TOKEN}`);
+  const rLink = document.getElementById('resultLink');
+  rLink.href = phone ? `whatsapp://send?phone=${phone}&text=${cmd}` : `https://wa.me/?text=${cmd}`;
+  rLink.onclick = () => {
+    setTimeout(() => {
+      if (phone) window.location.href = `https://wa.me/${phone}?text=${cmd}`;
+    }, 600);
+  };
+  const ct = document.getElementById('cmdText');
+  if(ct) ct.textContent = `${PREFIX}resultado_heist fallo ${TOKEN}`;
+}
+
+function copyResultCmd() {
+  const ct = document.getElementById('cmdText');
+  if (!ct || !ct.textContent) return;
+  const text = ct.textContent;
+  const finish = () => {
+    const b = document.getElementById('btnCopy');
+    if (b) { b.textContent = '✅ ¡Copiado!'; setTimeout(() => b.textContent = '📋 Copiar comando', 2000); }
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(finish).catch(() => fallbackCopy(text, finish));
+  } else {
+    fallbackCopy(text, finish);
+  }
+}
+function fallbackCopy(text, cb) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch(e){}
+  document.body.removeChild(ta);
+  if (cb) cb();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>🃏 Blackjack — DUbot Casino</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: #1a2e1a;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    min-height: 100vh; padding: 16px; color: #fff;
+    background-image: radial-gradient(ellipse at center, #2d5a2d 0%, #1a2e1a 70%);
+  }
+  h1 { font-size: 1.5rem; margin-bottom: 4px; text-align: center; }
+  .subtitle { font-size: 0.85rem; color: #aed6a0; margin-bottom: 16px; text-align: center; }
+  .bet-badge {
+    background: linear-gradient(135deg, #f5c518, #e09800);
+    color: #1a1a1a; font-weight: 700; font-size: 1rem;
+    border-radius: 20px; padding: 6px 18px; margin-bottom: 18px;
+    box-shadow: 0 2px 8px rgba(240,180,0,0.4);
+  }
+  .section-label {
+    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;
+    color: #88c488; margin-bottom: 8px;
+  }
+  .hand-area { width: 100%; max-width: 400px; margin-bottom: 14px; }
+  .cards-row {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    justify-content: center; min-height: 90px; align-items: center;
+  }
+  .card {
+    width: 62px; height: 90px; border-radius: 10px;
+    background: #fff; color: #1a1a1a;
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: 5px 6px; font-weight: 700; font-size: 1.1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    position: relative; border: 1px solid #ccc;
+    transition: transform 0.15s;
+  }
+  .card.red { color: #c0392b; }
+  .card.hidden {
+    background: linear-gradient(135deg, #1a3a6a, #2563bc);
+    border-color: #2563bc;
+  }
+  .card.hidden::after {
+    content: '🂠'; font-size: 2.5rem; color: rgba(255,255,255,0.3);
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  }
+  .card-top { font-size: 0.75rem; }
+  .card-center { font-size: 1.6rem; text-align: center; line-height: 1; }
+  .card-bottom { font-size: 0.75rem; transform: rotate(180deg); align-self: flex-end; }
+  .sum-badge {
+    display: inline-block; background: rgba(0,0,0,0.4);
+    border-radius: 12px; padding: 3px 12px; font-size: 0.85rem;
+    margin-top: 6px; color: #e0f0e0;
+  }
+  .sum-badge.bust { color: #ff6b6b; }
+  .sum-badge.bj { color: #f5c518; }
+  .divider { width: 100%; max-width: 400px; border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 8px 0 16px; }
+  .buttons { display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap; justify-content: center; }
+  .btn {
+    flex: 1; min-width: 90px; max-width: 130px;
+    padding: 14px 10px; border-radius: 14px; border: none;
+    font-size: 1rem; font-weight: 700; cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+  .btn:active { transform: scale(0.95); }
+  .btn:disabled { opacity: 0.4; cursor: default; }
+  .btn-hit { background: linear-gradient(135deg, #27ae60, #1e8449); color: #fff; }
+  .btn-stand { background: linear-gradient(135deg, #c0392b, #922b21); color: #fff; }
+  .btn-double { background: linear-gradient(135deg, #2980b9, #1f618d); color: #fff; }
+  .result-panel {
+    display: none; flex-direction: column; align-items: center;
+    background: rgba(0,0,0,0.5); border-radius: 20px;
+    padding: 24px; margin-top: 16px; width: 100%; max-width: 400px;
+    text-align: center;
+  }
+  .result-panel.show { display: flex; }
+  .result-icon { font-size: 3rem; margin-bottom: 8px; }
+  .result-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+  .result-title.win { color: #f5c518; }
+  .result-title.lose { color: #e74c3c; }
+  .result-title.tie { color: #95a5a6; }
+  .result-detail { font-size: 0.9rem; color: #aaa; margin-bottom: 16px; }
+  .btn-report {
+    background: linear-gradient(135deg, #25d366, #128c7e);
+    color: #fff; border: none; border-radius: 14px;
+    padding: 14px 28px; font-size: 1rem; font-weight: 700;
+    cursor: pointer; text-decoration: none; display: block;
+    box-shadow: 0 4px 16px rgba(37,211,102,0.4);
+    margin-top: 4px;
+  }
+  .btn-report:active { transform: scale(0.96); }
+  .footer { margin-top: 20px; font-size: 0.7rem; color: rgba(255,255,255,0.3); text-align: center; }
+  @keyframes dealAnim { from { opacity: 0; transform: translateY(-20px) scale(0.8); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  .card { animation: dealAnim 0.2s ease-out; }
+</style>
+</head>
+<body>
+
+<h1>🃏 DUbot Casino</h1>
+<p class="subtitle">Blackjack — Casa siempre para con 17+</p>
+<div class="bet-badge">💰 Apuesta: $<span id="betDisplay">{{BET}}</span></div>
+
+<div class="hand-area">
+  <div class="section-label">🤖 Dealer</div>
+  <div class="cards-row" id="dealerCards"></div>
+  <div class="sum-badge" id="dealerSum">?</div>
+</div>
+
+<hr class="divider">
+
+<div class="hand-area">
+  <div class="section-label">👤 Tú — <span id="playerLabel">{{PLAYER}}</span></div>
+  <div class="cards-row" id="playerCards"></div>
+  <div class="sum-badge" id="playerSum">0</div>
+</div>
+
+<div class="buttons" id="actionButtons">
+  <button class="btn btn-hit" onclick="hit()">👊 Pedir</button>
+  <button class="btn btn-stand" onclick="stand()">✋ Plantarse</button>
+  <button class="btn btn-double" id="btnDouble" onclick="doubleDown()">2️⃣ Doblar</button>
+</div>
+
+<div class="result-panel" id="resultPanel">
+  <div class="result-icon" id="resultIcon"></div>
+  <div class="result-title" id="resultTitle"></div>
+  <div class="result-detail" id="resultDetail"></div>
+  <div style="display:flex;gap:8px;width:100%;margin-top:10px;flex-wrap:wrap;justify-content:center;">
+    <a class="btn-report" id="reportLink" href="#" style="flex:1;min-width:140px;text-align:center;">📲 Enviar a WhatsApp</a>
+    <button class="btn-report" id="btnCopy" onclick="copyResultCmd()" style="flex:1;min-width:140px;background:rgba(255,255,255,0.15);box-shadow:none;border:1px solid rgba(255,255,255,0.3);">📋 Copiar comando</button>
+  </div>
+  <p style="margin-top:12px;font-size:0.75rem;color:#88c488;">O escribe/copia esto en el chat:<br><code id="cmdText" style="background:rgba(0,0,0,0.5);padding:4px 8px;border-radius:6px;color:#f5c518;user-select:all;display:inline-block;margin-top:4px;"></code></p>
+</div>
+
+<div class="footer">DUbot v1.9 · Casino 🎰 · Solo para uso dentro de WhatsApp</div>
+
+<script>
+const BOT_PHONE = '{{BOT_PHONE}}';
+const PREFIX = '{{PREFIX}}';
+const BET = parseInt('{{BET}}') || 200;
+const PLAYER = '{{PLAYER}}';
+const TOKEN = '{{TOKEN}}';
+
+// Mazos
+const SUITS = ['♠','♥','♦','♣'];
+const VALUES = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const RED_SUITS = ['♥','♦'];
+
+let deck = [];
+let playerHand = [], dealerHand = [];
+let gameOver = false;
+let doubled = false;
+
+function buildDeck() {
+  deck = [];
+  for(const s of SUITS) for(const v of VALUES) deck.push({v, s});
+  for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
+}
+
+function cardValue(card) {
+  if(card.v==='A') return 11;
+  if(['J','Q','K'].includes(card.v)) return 10;
+  return parseInt(card.v);
+}
+
+function handSum(hand) {
+  let s = hand.reduce((a,c)=>a+cardValue(c),0);
+  let aces = hand.filter(c=>c.v==='A').length;
+  while(s>21&&aces>0){s-=10;aces--;}
+  return s;
+}
+
+function deal() { return deck.pop(); }
+
+function renderCard(card, hidden=false) {
+  const el = document.createElement('div');
+  el.className = 'card' + (RED_SUITS.includes(card?.s)?'  red':'') + (hidden?' hidden':'');
+  if(!hidden){
+    el.innerHTML=`<span class="card-top">${card.v}${card.s}</span>
+    <span class="card-center">${card.s}</span>
+    <span class="card-bottom">${card.v}${card.s}</span>`;
+  }
+  return el;
+}
+
+function renderHands(hideDealer=true) {
+  const dc = document.getElementById('dealerCards');
+  const pc = document.getElementById('playerCards');
+  dc.innerHTML=''; pc.innerHTML='';
+  
+  dealerHand.forEach((c,i)=>{dc.appendChild(renderCard(c, hideDealer&&i===0));});
+  playerHand.forEach(c=>{pc.appendChild(renderCard(c));});
+  
+  const ps = handSum(playerHand);
+  const pEl = document.getElementById('playerSum');
+  pEl.textContent = ps;
+  pEl.className = 'sum-badge' + (ps>21?' bust':(ps===21?' bj':''));
+
+  const ds = hideDealer ? handSum(dealerHand.slice(1)) : handSum(dealerHand);
+  const dEl = document.getElementById('dealerSum');
+  dEl.textContent = hideDealer ? `? + ${ds}` : ds;
+  dEl.className = 'sum-badge' + (!hideDealer&&ds>21?' bust':'');
+}
+
+function startGame() {
+  buildDeck();
+  playerHand = [deal(), deal()];
+  dealerHand = [deal(), deal()];
+  gameOver = false; doubled = false;
+  renderHands(true);
+  document.getElementById('actionButtons').style.display='flex';
+  document.getElementById('resultPanel').classList.remove('show');
+
+  // Auto blackjack
+  if(handSum(playerHand)===21) {
+    setTimeout(()=>stand(), 600);
+  }
+  // Disable double if not enough... (conceptual, no real balance check here)
+}
+
+function hit() {
+  if(gameOver) return;
+  playerHand.push(deal());
+  renderHands(true);
+  if(handSum(playerHand)>21) endGame('bust');
+  else if(handSum(playerHand)===21) setTimeout(()=>stand(),400);
+}
+
+function stand() {
+  if(gameOver) return;
+  // Dealer draws
+  while(handSum(dealerHand)<17) dealerHand.push(deal());
+  renderHands(false);
+  
+  const ps = handSum(playerHand);
+  const ds = handSum(dealerHand);
+  
+  if(ps>21) endGame('bust');
+  else if(ds>21) endGame('win');
+  else if(ps>ds) endGame('win');
+  else if(ps===ds) endGame('tie');
+  else endGame('lose');
+}
+
+function doubleDown() {
+  if(gameOver||playerHand.length>2) return;
+  doubled = true;
+  hit();
+  if(!gameOver) setTimeout(()=>stand(),400);
+}
+
+function endGame(result) {
+  gameOver = true;
+  document.getElementById('actionButtons').style.display='none';
+  renderHands(false);
+
+  const panel = document.getElementById('resultPanel');
+  const icon = document.getElementById('resultIcon');
+  const title = document.getElementById('resultTitle');
+  const detail = document.getElementById('resultDetail');
+  const link = document.getElementById('reportLink');
+  
+  panel.classList.add('show');
+
+  let adjBet = doubled ? BET*2 : BET;
+  let msg='', waCmd='';
+
+  if(result==='win') {
+    const prize = adjBet * 2;
+    icon.textContent='🎉'; 
+    title.textContent='¡Ganaste!'; title.className='result-title win';
+    detail.textContent=`Tu mano: ${handSum(playerHand)} · Dealer: ${handSum(dealerHand)}\nPremio: +$${prize.toLocaleString()}`;
+    msg=`resultado_bj ganar ${adjBet} ${TOKEN}`;
+  } else if(result==='tie') {
+    icon.textContent='🤝';
+    title.textContent='¡Empate!'; title.className='result-title tie';
+    detail.textContent=`Ambos con ${handSum(playerHand)} · Apuesta devuelta.`;
+    msg=`resultado_bj empate ${adjBet} ${TOKEN}`;
+  } else {
+    icon.textContent='😔';
+    title.textContent=result==='bust'?'¡Te pasaste!':'¡Perdiste!'; title.className='result-title lose';
+    detail.textContent=`Tu mano: ${handSum(playerHand)} · Dealer: ${handSum(dealerHand)}\nPérdida: -$${adjBet.toLocaleString()}`;
+    msg=`resultado_bj perder ${adjBet} ${TOKEN}`;
+  }
+
+  const encoded = encodeURIComponent(PREFIX+msg);
+  const phone = BOT_PHONE.replace(/[^0-9]/g,'');
+  link.href = phone ? `whatsapp://send?phone=${phone}&text=${encoded}` : `https://wa.me/?text=${encoded}`;
+  link.onclick = () => {
+    setTimeout(() => {
+      if (phone) window.location.href = `https://wa.me/${phone}?text=${encoded}`;
+    }, 600);
+  };
+  const ct = document.getElementById('cmdText');
+  if(ct) ct.textContent = PREFIX + msg;
+}
+
+function copyResultCmd() {
+  const ct = document.getElementById('cmdText');
+  if (!ct || !ct.textContent) return;
+  const text = ct.textContent;
+  const finish = () => {
+    const b = document.getElementById('btnCopy');
+    if (b) { b.textContent = '✅ ¡Copiado!'; setTimeout(() => b.textContent = '📋 Copiar comando', 2000); }
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(finish).catch(() => fallbackCopy(text, finish));
+  } else {
+    fallbackCopy(text, finish);
+  }
+}
+function fallbackCopy(text, cb) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch(e){}
+  document.body.removeChild(ta);
+  if (cb) cb();
+}
+
+startGame();
+</script>
+</body>
+</html>
